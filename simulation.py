@@ -8,6 +8,35 @@ import astropy.units as u
 
 
 class simulation_object :
+    """
+    A class used to create simulated object issus to MC data 
+
+    :param filename: name of MC data file
+    :type filename: str
+    :ivar E_min : the energy range mininum (in TeV)
+    :vartype: int
+    :ivar E_max : the energy range maximum (in TeV)
+    :vartype: int
+    :ivar radius : the radius of the effective area (in m)
+    :vartype: float
+    :ivar mc_energy : the energy of the mc data (in TeV)
+    :vartype: list of float
+    :ivar index : the spectral index 
+    :vartype: float
+    :ivar N : the number of showers
+    :vartype: int
+    :ivar E_0 : (in TeV)
+    :vartype: float
+    :ivar S : the surface of the effective area (in cm2)
+    :vartype: float
+    :ivar f : the focal lenght of the telescope 
+    :vartype: int
+    :ivar cam_x : coordinate x of the camera
+    :vartype: list of float
+    :ivar cam_y : coordinate y of the camera
+    :vartype: list of float
+
+    """
 
     def __init__(self, filename):
         data_config = pd.read_hdf(filename, "simulation/run_config")
@@ -27,6 +56,11 @@ class simulation_object :
        
 
     def powerlaw_MC_data (self) :
+        """Return powerlaw of MC data 
+
+        :returns: power law normed
+        :rtype: list of float
+        """
         integral = ( 1/(self.index+1) ) * self.E_0.to(u.TeV) * ( (self.E_max/self.E_0)**(self.index+1) - (self.E_min/self.E_0)**(self.index+1) ) 
         norm = self.N/(self.S*integral) 
         return norm * (self.mc_energy/self.E_0).decompose()**self.index

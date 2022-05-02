@@ -10,9 +10,17 @@ cutoff_spectrum_parameters = {"type" : "cutoff", "E_0" :  1 * u.TeV,
     "norm" : 3.80e-11 * 1/(u.TeV * u.cm**2 * u.s), "index" : -2.21, "curve" : 0, "E_cut" : 6.0 * u.TeV}
 
 def weighting(sim_object, src_object) : 
-        
-        spectral_weights = src_object.tobs * src_object.spectrum(sim_object.mc_energy) / sim_object.powerlaw_MC_data() 
+        """ Return the final weight for the histogram of energy of MC data
 
+        :param sim_object: simulation data
+        :type: simulation_object
+        :param src_object: source data
+        :type: source_object
+        :returns: final weights
+        :rtype: list 
+        """
+        spectral_weights = src_object.tobs * src_object.spectrum(sim_object.mc_energy) / sim_object.powerlaw_MC_data() 
+        
         return src_object.spatial_weights(sim_object.cam_x, sim_object.cam_y) * spectral_weights * src_object.area_scale()
 
 
