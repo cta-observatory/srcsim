@@ -40,7 +40,10 @@ class source_object :
         self.rmin = rmin * u.deg
         self.spectrum_parameters = spectrum_parameters
         self.shape = shape
-
+        self.powerlaw_spectrum_parameters = {"type" : "powerlaw", "E_0" :  1 * u.TeV, 
+        "norm" : 3.80e-11 * 1/(u.TeV * u.cm**2 * u.s), "index" : -2.21, "curve" : 0, "E_cut" : 0 }
+        self.cutoff_spectrum_parameters = {"type" : "cutoff", "E_0" :  1 * u.TeV, 
+        "norm" : 3.80e-11 * 1/(u.TeV * u.cm**2 * u.s), "index" : -2.21, "curve" : 0, "E_cut" : 6.0 * u.TeV}
     
     def spatial_weights (self, cam_x, cam_y) : 
         """ Calculate spatial weights
