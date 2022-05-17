@@ -3,7 +3,7 @@
 import numpy as np
 import astropy.units as u
 from simulation import *
-from aux import *
+from aux_observation import *
 
 class source_object :
 

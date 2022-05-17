@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from aux import *
+from aux_observation import *
 from lstchain.io.io import dl2_params_lstcam_key
 import pandas as pd
 import numpy as np
