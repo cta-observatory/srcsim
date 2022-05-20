@@ -38,34 +38,55 @@ class simulation_object :
 
     """
 
-    def __init__(self, filename):
-        self.data_config = pd.read_hdf(filename, "simulation/run_config")
-        self.data = pd.read_hdf(filename, key=dl2_params_lstcam_key)
+    def __init__(self, filename_gamma, filename_proton):
 
-        self.E_min = self.data_config['energy_range_min'][0] * u.TeV
-        self.E_max = self.data_config['energy_range_max'][0] * u.TeV
-        self.radius = self.data_config['max_scatter_range'][0] * u.m 
-        self.mc_energy = self.data['mc_energy'].to_numpy() * u.TeV
-        self.index = self.data_config['spectral_index'][0]
-        self.N = self.data_config['num_showers'][0] * self.data_config['shower_reuse'][0] * len(self.data_config['shower_reuse'])
-        self.E_0 = np.sqrt(self.E_max * self.E_min) 
-        self.S = np.pi * (self.radius.to(u.cm))**2 
+        self.data = pd.read_hdf(filename_gamma, key=dl2_params_lstcam_key)
+        self.data_config = pd.read_hdf(filename_gamma, "simulation/run_config")
+        self.data_proton = pd.read_hdf(filename_proton, key=dl2_params_lstcam_key)
+        self.data_config_proton = pd.read_hdf(filename_proton, "simulation/run_config")
+
+        self.powerlaw_parameter_gamma = { "type" : "gamma", "E_min" : self.data_config['energy_range_min'][0] * u.TeV , "E_max" : 
+        self.data_config['energy_range_max'][0] * u.TeV, "E_0" :  np.sqrt(self.data_config['energy_range_max'][0] * u.TeV * 
+        self.data_config['energy_range_min'][0] * u.TeV) , "N" : self.data_config['num_showers'][0] * self.data_config['shower_reuse'][0] 
+        * len(self.data_config['shower_reuse']), "index" : self.data_config['spectral_index'][0], "radius" : self.data_config['max_scatter_range'][0] * u.m  }
+
+        self.powerlaw_parameter_proton = { "type" : "proton", "E_min" : self.data_config_proton['energy_range_min'][0] * u.TeV , "E_max" : 
+        self.data_config_proton['energy_range_max'][0] * u.TeV, "E_0" :  np.sqrt(self.data_config_proton['energy_range_max'][0] * u.TeV * 
+        self.data_config_proton['energy_range_min'][0] * u.TeV) , "N" : self.data_config_proton['num_showers'][0] * self.data_config_proton['shower_reuse'][0] 
+        * len(self.data_config_proton['shower_reuse']), "index" : self.data_config_proton['spectral_index'][0],
+        "radius" : self.data_config_proton['max_scatter_range'][0] * u.m  }
+
         self.f = 27 * u.m  
         self.cam_x = (self.data['reco_src_x'].to_numpy() * u.m / self.f) * u.rad           
         self.cam_y = (self.data['reco_src_y'].to_numpy() * u.m / self.f) * u.rad
+
+        self.mc_energy = self.data['mc_energy'].to_numpy() * u.TeV
+        self.mc_energy_proton = self.data_proton['mc_energy'].to_numpy() * u.TeV
+
        
 
-    def powerlaw_MC_data (self) :
-        """Return powerlaw of MC data 
+    def powerlaw_MC_data(self, type = "gamma") :
+
+        """Return powerlaw of MC damma data 
 
         :returns: power law normed
         :rtype: list of float
         """
-        integral = ( 1/(self.index+1) ) * self.E_0.to(u.TeV) * ( (self.E_max/self.E_0)**(self.index+1) - (self.E_min/self.E_0)**(self.index+1) ) 
-        norm = self.N/(self.S*integral) 
-        return norm * (self.mc_energy/self.E_0).decompose()**self.index
+        if type == "proton" : 
+            parameter=self.powerlaw_parameter_proton
+            S = np.pi * (parameter["radius"].to(u.cm))**2 
+            integral = ( 1/(parameter["index"]+1) ) * parameter["E_0"].to(u.TeV) * (( parameter["E_max"] / parameter["E_0"] )**(parameter["index"]+1) - (parameter["E_min"]/parameter["E_0"])**(parameter["index"]+1) ) 
+            norm = parameter["N"]/(S*integral) 
+            return norm * (self.mc_energy_proton/parameter["E_0"]).decompose()**parameter["index"]
+        else :
+            parameter=self.powerlaw_parameter_gamma
+            S = np.pi * (parameter["radius"].to(u.cm))**2 
+            integral = ( 1/(parameter["index"]+1) ) * parameter["E_0"].to(u.TeV) * (( parameter["E_max"] / parameter["E_0"] )**(parameter["index"]+1) - (parameter["E_min"]/parameter["E_0"])**(parameter["index"]+1) ) 
+            norm = parameter["N"]/(S*integral) 
+            return norm * (self.mc_energy/parameter["E_0"]).decompose()**parameter["index"]
+        
 
-    
+
 
 
     
