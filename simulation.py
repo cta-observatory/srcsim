@@ -59,9 +59,12 @@ class simulation_object :
         self.f = 27 * u.m  
         self.cam_x = (self.data['reco_src_x'].to_numpy() * u.m / self.f) * u.rad           
         self.cam_y = (self.data['reco_src_y'].to_numpy() * u.m / self.f) * u.rad
+        self.viewcone = self.data_config['max_viewcone_radius'][0] * u.deg
 
         self.mc_energy = self.data['mc_energy'].to_numpy() * u.TeV
         self.mc_energy_proton = self.data_proton['mc_energy'].to_numpy() * u.TeV
+
+        self.sim_area = 2 * np.pi * (1 - np.cos(self.viewcone))
 
        
 

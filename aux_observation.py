@@ -5,6 +5,7 @@ import astropy.units as u
 
 import pandas as pd
 from astropy.time import Time
+from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 
 class observation :
     """
@@ -17,13 +18,69 @@ class observation :
 
     """
 
-    def __init__(self, sim_object, src_object, time_start='2022-05-16T01:00:00', time_stop='2022-05-16T01:20:00'): 
+    def __init__(self, sim_object, src_object, time_start='2022-05-16T01:00:00', 
+    time_stop='2022-05-16T01:20:00', RA = 84.0331, Dec = +22.0145 ): 
 
         self.sim_object = sim_object
         self.src_object = src_object
+
         self.time_start = Time(time_start, format='isot', scale='utc')
         self.time_stop  = Time(time_stop, format='isot', scale='utc')
         self.tobs = (self.time_stop - self.time_start).to(u.s) 
+
+        self.RA = RA
+        self.Dec = Dec
+
+    def center_camera(self) :
+        src_coord = SkyCoord(self.src_object.RA, self.src_object.Dec, unit="deg")
+        pointing_coord = SkyCoord(self.RA, self.Dec, unit="deg")
+        observation_localisation = EarthLocation(
+        lat=28.761758*u.deg,
+        lon=-17.890659*u.deg,
+        height=2200*u.m
+        )
+        observation_time = Time(self.time_start)
+        aa = AltAz(location=observation_localisation, obstime= observation_time)
+        src_coord_AA = src_coord.transform_to(aa)
+        pointing_coord_AA = pointing_coord.transform_to(aa)
+        sep = src_coord_AA.spherical_offsets_to(pointing_coord_AA)
+        print("x_0 =", sep[0].deg, "\n y_0 =", sep[1].deg)
+        return sep[0].deg, sep[1].deg
+
+    def area_scale (self) : 
+        """ Calculate area scale (simulation data area / field of view area)
+        
+        :returns: area scale
+        :rtype: float
+        """
+        area_fov = self.src_object.src_area()
+        area_sim = self.sim_object.sim_area
+        return area_sim / area_fov
+
+
+    def spatial_weights (self, cam_x, cam_y) : 
+        """ Calculate spatial weights
+
+        :param cam_x : coordinate x of the camera
+        :type: list of float
+        :param cam_y : coordinate y of the camera
+        :type: list of float
+        :returns: weights
+        :rtype: list 
+        """
+        x0 = observation.center_camera(self)[0] *u.deg
+        y0 = observation.center_camera(self)[1] *u.deg
+        rmax = self.src_object.rmax
+        rmin = self.src_object.rmin
+        r = np.sqrt((cam_x.to(u.deg) - x0)**2 + (cam_y.to(u.deg) - y0)**2)
+        print("rmax =", rmax, "\n rmin =", rmin )
+        if self.src_object.shape == "disk" : 
+            return (r < rmax)
+        if self.src_object.shape == "gauss" : 
+            return np.exp(- r.to(u.deg)**2 / rmax.to(u.deg)**2)
+        else :
+            return (r > rmin ) & (r < rmax)
+
 
     def background_weighting(self) :
         """ Return the final weight of background 
@@ -50,7 +107,7 @@ class observation :
         :rtype: list 
         """
         spectral_weights = self.tobs * self.src_object.spectrum(self.sim_object.mc_energy) / self.sim_object.powerlaw_MC_data() 
-        return self.src_object.spatial_weights(self.sim_object.cam_x, self.sim_object.cam_y) * spectral_weights * self.src_object.area_scale() 
+        return observation.spatial_weights(self, self.sim_object.cam_x, self.sim_object.cam_x) * spectral_weights * observation.area_scale(self) 
 
     def final_background_sim(self, write=False, filename='background.h5') : 
         """ Return final background data with all informations

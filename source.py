@@ -30,57 +30,34 @@ class source_object :
     """
 
     def __init__(self, spectrum_parameters = {"type" : "log_parabola", "E_0" :  1 * u.TeV, 
-    "norm" : 3.23e-11 * 1/(u.TeV * u.cm**2 * u.s), "index" : - 2.47, "curve" : - 0.24, "E_cut" : 0 }, 
-    rmax=0.7, rmin=0.1, x0=0, y0=0, offset=0.4, shape="ring") :
-        self.x0 = x0 *u.deg
-        self.y0 = y0 *u.deg
+    "norm" : 3.23e-11 * 1/(u.TeV * u.cm**2 * u.s), "index" : - 2.47, "curve" : - 0.24, "E_cut" : 0 }
+    , offset=0.4, shape = "ring", rmax = 0.4* u.deg, rmin = 0.1 *u.deg ) :
+        self.RA = 83.6331 
+        self.Dec = +22.0145 
         self.offset = offset * u.deg
-        self.rmax = rmax * u.deg
-        self.rmin = rmin * u.deg
+
         self.spectrum_parameters = spectrum_parameters
-        self.shape = shape
+
+
         self.powerlaw_spectrum_parameters = {"type" : "powerlaw", "E_0" :  1 * u.TeV, 
         "norm" : 3.80e-11 * 1/(u.TeV * u.cm**2 * u.s), "index" : -2.21, "curve" : 0, "E_cut" : 0 }
         self.cutoff_spectrum_parameters = {"type" : "cutoff", "E_0" :  1 * u.TeV, 
         "norm" : 3.80e-11 * 1/(u.TeV * u.cm**2 * u.s), "index" : -2.21, "curve" : 0, "E_cut" : 6.0 * u.TeV}
+
+        self.rmin = rmin
+        self.rmax = rmax
+        self.shape = shape
     
-    def spatial_weights (self, cam_x, cam_y) : 
-        """ Calculate spatial weights
-
-        :param cam_x : coordinate x of the camera
-        :type: list of float
-        :param cam_y : coordinate y of the camera
-        :type: list of float
-        :returns: weights
-        :rtype: list 
-        """
-        r = np.sqrt((cam_x.to(u.deg) - self.x0)**2 + (cam_y.to(u.deg) - self.y0)**2)
-        if self.shape == "disk" : 
-            return (r < self.rmax)
-        if self.shape == "gaussian" : 
-            return np.exp(- r.to(u.deg)**2 / self.rmax.to(u.deg)**2)
-        else :
-            return (r > self.rmin ) & (r < self.rmax)
-
-    def area_scale (self) : 
-        """ Calculate area scale (simulation data area / field of view area)
-        
-        :returns: area scale
-        :rtype: float
-        """
+    def src_area (self) : 
         if self.shape == "disk" : 
             area_fov = 2 * np.pi * (1 - np.cos(self.rmax))
-            area_sim = 2 * np.pi * (1 - np.cos(6*u.deg))
-            return area_sim / area_fov
-        if self.shape == "gaussian" : 
+        if self.shape== "gauss" : 
             area_fov = 2 * np.pi * (1 - np.cos(1.5 * self.rmax))
-            area_sim = 2 * np.pi * (1 - np.cos(6*u.deg))
-            return area_sim / area_fov
         else :
             area_fov = 2 * np.pi * (np.cos(self.rmin) - np.cos(self.rmax))
-            area_sim = 2 * np.pi * (1 - np.cos(6*u.deg))
-            return area_sim / area_fov
+        return area_fov
 
+    
     def spectrum (self, energy) :
         """ Calculate the differential photon spectrum of the source
         
