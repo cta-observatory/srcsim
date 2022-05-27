@@ -44,7 +44,6 @@ class observation :
         src_coord_AA = src_coord.transform_to(aa)
         pointing_coord_AA = pointing_coord.transform_to(aa)
         sep = src_coord_AA.spherical_offsets_to(pointing_coord_AA)
-        print("x_0 =", sep[0].deg, "\n y_0 =", sep[1].deg)
         return sep[0].deg, sep[1].deg
 
     def area_scale (self) : 
@@ -73,7 +72,6 @@ class observation :
         rmax = self.src_object.rmax
         rmin = self.src_object.rmin
         r = np.sqrt((cam_x.to(u.deg) - x0)**2 + (cam_y.to(u.deg) - y0)**2)
-        print("rmax =", rmax, "\n rmin =", rmin )
         if self.src_object.shape == "disk" : 
             return (r < rmax)
         if self.src_object.shape == "gauss" : 
@@ -107,7 +105,8 @@ class observation :
         :rtype: list 
         """
         spectral_weights = self.tobs * self.src_object.spectrum(self.sim_object.mc_energy) / self.sim_object.powerlaw_MC_data() 
-        return observation.spatial_weights(self, self.sim_object.cam_x, self.sim_object.cam_x) * spectral_weights * observation.area_scale(self) 
+        weights_total = observation.spatial_weights(self, self.sim_object.cam_x, self.sim_object.cam_y) * spectral_weights * observation.area_scale(self) 
+        return weights_total
 
     def final_background_sim(self, write=False, filename='background.h5') : 
         """ Return final background data with all informations
@@ -164,17 +163,23 @@ class observation :
         """
 
         #step: random weights
+
+
         mc_energy = self.sim_object.mc_energy
-        weights_tot = observation.weighting(self)
+        weights_tot = self.weighting() # observation.weighting(self)[1] * observation.weighting(self)[0] * observation.weighting(self)[2]
         probability = weights_tot / weights_tot.sum()
-        n_expected_events = int(weights_tot.sum())
+        n_expected_events = len(weights_tot)
         index = np.random.choice(
                     np.arange(len(mc_energy)),
                     size=n_expected_events,
                     p=probability
                 )
         
+
+
+        
         sim_data = self.sim_object.data.iloc[index]
+
 
         #step: add dragon_time and delta_t columns 
         lamb= 12e3
