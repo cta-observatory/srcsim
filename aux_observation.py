@@ -4,6 +4,7 @@ import numpy as np
 import astropy.units as u
 
 import pandas as pd
+from datetime import datetime
 from astropy.time import Time
 from astropy.coordinates import AltAz, SkyCoord, EarthLocation
 
@@ -18,8 +19,8 @@ class observation :
 
     """
 
-    def __init__(self, sim_object, src_object, time_start='2022-05-16T01:00:00', 
-    time_stop='2022-05-16T01:20:00', RA = 84.0331, Dec = +22.0145 ): 
+    def __init__(self, sim_object, src_object, time_start='2022-01-16T22:00:00', 
+    time_stop='2022-01-16T22:20:00', RA = 84.0331, Dec = +22.0145 ): 
 
         self.sim_object = sim_object
         self.src_object = src_object
@@ -43,7 +44,7 @@ class observation :
         aa = AltAz(location=observation_localisation, obstime= observation_time)
         src_coord_AA = src_coord.transform_to(aa)
         pointing_coord_AA = pointing_coord.transform_to(aa)
-        sep = src_coord_AA.spherical_offsets_to(pointing_coord_AA)
+        sep = pointing_coord_AA.spherical_offsets_to(src_coord_AA)
         return sep[0].deg, sep[1].deg
 
     def area_scale (self) : 
@@ -67,8 +68,8 @@ class observation :
         :returns: weights
         :rtype: list 
         """
-        x0 = observation.center_camera(self)[0] *u.deg
-        y0 = observation.center_camera(self)[1] *u.deg
+        x0 = self.center_camera(self)[0] *u.deg
+        y0 = self.center_camera(self)[1] *u.deg
         rmax = self.src_object.rmax
         rmin = self.src_object.rmin
         r = np.sqrt((cam_x.to(u.deg) - x0)**2 + (cam_y.to(u.deg) - y0)**2)
@@ -105,7 +106,7 @@ class observation :
         :rtype: list 
         """
         spectral_weights = self.tobs * self.src_object.spectrum(self.sim_object.mc_energy) / self.sim_object.powerlaw_MC_data() 
-        weights_total = observation.spatial_weights(self, self.sim_object.cam_x, self.sim_object.cam_y) * spectral_weights * observation.area_scale(self) 
+        weights_total = self.spatial_weights(self, self.sim_object.cam_x, self.sim_object.cam_y) * spectral_weights * self.area_scale(self) 
         return weights_total
 
     def final_background_sim(self, write=False, filename='background.h5') : 
@@ -121,7 +122,7 @@ class observation :
 
         #step: random weights
         mc_energy = self.sim_object.mc_energy_proton
-        weights_tot = observation.background_weighting(self)
+        weights_tot = self.background_weighting(self)
         probability = weights_tot / weights_tot.sum()
         n_expected_events = int(weights_tot.sum())
         index = np.random.choice(
@@ -139,6 +140,7 @@ class observation :
         delta_t = np.random.exponential(1/lamb,size)
         dragon_time = np.linspace(self.time_start.unix, self.time_stop.unix, size) 
         background_data = background_data.assign(delta_t=delta_t, dragon_time=dragon_time)
+
 
         #step: writing or not of the file
         if write==True:
@@ -166,17 +168,14 @@ class observation :
 
 
         mc_energy = self.sim_object.mc_energy
-        weights_tot = self.weighting() # observation.weighting(self)[1] * observation.weighting(self)[0] * observation.weighting(self)[2]
+        weights_tot = self.weighting() # self.weighting(self)[1] * self.weighting(self)[0] * self.weighting(self)[2]
         probability = weights_tot / weights_tot.sum()
-        n_expected_events = len(weights_tot)
+        n_expected_events = int(weights_tot.sum())
         index = np.random.choice(
                     np.arange(len(mc_energy)),
                     size=n_expected_events,
                     p=probability
                 )
-        
-
-
         
         sim_data = self.sim_object.data.iloc[index]
 
@@ -195,7 +194,7 @@ class observation :
         else:
             pass
 
-        return sim_data
+        return sim_data, index
 
     def total(self, write=False, filename='dl2_LST-1.Run99999.h5') :
         """ Return final simulation data (data+background) with all informations
@@ -207,11 +206,36 @@ class observation :
         :returns: final data table 
         :rtype: DataFrame
         """
-
-        df_background = observation.final_background_sim(self)
-        df_data = observation.final_sim(self) 
+        
+        df_background = self.final_background_sim(self)
+        df_data = self.final_sim(self) 
         total = pd.concat([df_data, df_background])
+        print('etape 1')
         total = total.sort_values(by = 'dragon_time')
+        print('etape 2')
+        size= len(total)
+        print('etape 3 size =', size)
+
+        pointing_coord = SkyCoord(self.RA, self.Dec, unit="deg")
+        observation_localisation = EarthLocation(
+            lat=28.761758*u.deg,
+            lon=-17.890659*u.deg,
+            height=2200*u.m
+            )
+        dt = total['dragon_time'].to_numpy()
+        observation_time = [ datetime.utcfromtimestamp(x).strftime('%Y-%m-%d %H:%M:%S') for x in dt]
+        print('etape 4')
+        aa = AltAz(location=observation_localisation, obstime= observation_time)
+        pointing_coord_AA = pointing_coord.transform_to(aa)
+        print('etape 5')
+        az  = (pointing_coord_AA.az).to('rad').value
+        alt = (pointing_coord_AA.alt).to('rad').value
+        print('etape 6')
+        total = total.drop(columns=["az_tel", "alt_tel"])
+        print('etape 7')
+        total = total.assign(az_tel=az, alt_tel=alt)
+        print('etape 8')
+        
 
         if write==True:
             total.to_hdf(filename, 'dl2/event/telescope/parameters/LST_LSTCam')

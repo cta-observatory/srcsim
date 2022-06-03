@@ -31,7 +31,7 @@ class source_object :
 
     def __init__(self, spectrum_parameters = {"type" : "log_parabola", "E_0" :  1 * u.TeV, 
     "norm" : 3.23e-11 * 1/(u.TeV * u.cm**2 * u.s), "index" : - 2.47, "curve" : - 0.24, "E_cut" : 0 }
-    , offset=0.4, shape = "ring", rmax = 0.7* u.deg, rmin = 0.1 *u.deg ) :
+    , offset=0.4, shape = "ring", rmax = 0.2* u.deg, rmin = 0.1 *u.deg ) :
         self.RA = 83.6331 
         self.Dec = +22.0145 
         self.offset = offset * u.deg

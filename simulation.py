@@ -56,7 +56,7 @@ class simulation_object :
         * len(self.data_config_proton['shower_reuse']), "index" : self.data_config_proton['spectral_index'][0],
         "radius" : self.data_config_proton['max_scatter_range'][0] * u.m  }
 
-        self.f = 27 * u.m  
+        self.f = 28 * u.m  
         self.cam_x = (self.data['reco_src_x'].to_numpy() * u.m / self.f) * u.rad           
         self.cam_y = (self.data['reco_src_y'].to_numpy() * u.m / self.f) * u.rad
         self.viewcone = self.data_config['max_viewcone_radius'][0] * u.deg
