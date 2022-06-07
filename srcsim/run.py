@@ -60,8 +60,8 @@ f"""{type(self).__name__} instance
         tedges = np.linspace(self.tstart, self.tstop, num=ntimebins+1)
         tdelta = np.diff(tedges)
         
-        for obstime, dt in zip(tedges, tdelta):
-            frame = AltAz(obstime=obstime, location=self.obsloc)
+        for tstart, dt in zip(tedges[:-1], tdelta):
+            frame = AltAz(obstime=tstart, location=self.obsloc)
             tel_pos = self.tel_pos.transform_to(frame)
         
             for sample in mcevents.samples:
@@ -97,6 +97,11 @@ f"""{type(self).__name__} instance
                 )
 
                 evt = sample.data_table.iloc[idx]
+
+                evt.loc[slice(None), 'mc_az_tel'] = tel_pos.az.to('rad').value
+                evt.loc[slice(None), 'mc_alt_tel'] = tel_pos.alt.to('rad').value
+
+                evt['dragon_time'] = np.linspace(tstart.unix, (tstart+dt).unix, num=len(evt))
 
                 events.append(evt)
             
