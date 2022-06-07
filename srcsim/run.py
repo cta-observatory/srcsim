@@ -101,7 +101,7 @@ f"""{type(self).__name__} instance
                 evt.loc[slice(None), 'mc_az_tel'] = tel_pos.az.to('rad').value
                 evt.loc[slice(None), 'mc_alt_tel'] = tel_pos.alt.to('rad').value
 
-                evt['dragon_time'] = np.linspace(tstart.unix, (tstart+dt).unix, num=len(evt))
+                evt = evt.assign(dragon_time = np.linspace(tstart.unix, (tstart+dt).unix, num=len(evt)))
 
                 events.append(evt)
             
