@@ -1,0 +1,25 @@
+run:
+    pointing:
+        ra: '83 deg'
+        dec: '21 deg'
+    time: 
+        start: '2022-05-31T15:00:00'
+        stop: '2022-05-31T15:20:00'
+    location:
+        lon: '-17.890659 deg'
+        lat: '28.761758 deg'
+        height: '2200 m'
+source:
+    spatial:
+        type: 'gauss'
+        ra: '83 deg'
+        dec: '22 deg'
+        radius: '0.5 deg'
+        sigma: '0.5 deg'
+    spectral:
+        type: 'pwl'
+        norm: '1e-20 1/(cm2 s eV)'
+        e0: '100 GeV'
+        ecut: '0.1 TeV'
+        index: -2
+        beta: -0.3
