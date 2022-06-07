@@ -1,5 +1,8 @@
+import yaml
 import numpy as np
 import pandas as pd
+import astropy.units as u
+from astropy.time import Time
 from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
 
 
@@ -24,7 +27,31 @@ f"""{type(self).__name__} instance
         )
 
         return super().__repr__() 
-        
+
+    @classmethod
+    def from_config(cls, config):
+        if isinstance(config, str):
+            cfg = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
+        else:
+            cfg = config
+
+        data_run = cls(
+            SkyCoord(
+                u.Quantity(cfg['pointing']['ra']),
+                u.Quantity(cfg['pointing']['dec']),
+                frame='icrs'
+            ),
+            Time(cfg['time']['start']),
+            Time(cfg['time']['stop']),
+            EarthLocation(
+                lat=u.Quantity(cfg['location']['lat']),
+                lon=u.Quantity(cfg['location']['lon']),
+                height=u.Quantity(cfg['location']['height']),
+            )
+        )
+
+        return data_run
+
     def get_events(self, mcevents, source):
         events = []
         nsamples = len(mcevents.samples)
