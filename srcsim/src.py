@@ -28,6 +28,11 @@ def generator(config):
             cfg['spatial']['sigma'],
             specgen(cfg['spectral'])
         )
+    elif cfg['spatial']['type'] == 'iso':
+        src = IsotropicSource(
+            SkyCoord(ra=cfg['spatial']['ra'], dec=cfg['spatial']['dec'], frame='icrs'),
+            specgen(cfg['spectral'])
+        )
     else:
         raise ValueError(f"Unknown source type '{cfg['type']}'")
     
@@ -86,3 +91,20 @@ f"""{type(self).__name__} instance
         r = self.pos.separation(coord)
         
         return norm * np.exp( -(r**2 / (2 * self.sigma**2)).decompose() )
+
+
+class IsotropicSource(Source):
+    def __init__(self, pos, dnde):
+        super().__init__(pos, dnde)
+
+    def __repr__(self):
+        print(
+f"""{type(self).__name__} instance
+    {'Position':.<20s}: {self.pos}
+"""
+        )
+
+        return super().__repr__()
+
+    def dndo(self, coord):
+        return 1 / (4 * np.pi * u.sr)
