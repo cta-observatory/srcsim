@@ -89,6 +89,9 @@ f"""{type(self).__name__} instance
         
         return norm * (r >= offset_min) * (r <= offset_max)
 
+    def dndedo(self, energy, coord):
+        return self.dnde(energy) * self.dndo(coord)
+
 
 class MCEvents:
     def __init__(self, file_name):

@@ -77,13 +77,8 @@ f"""{type(self).__name__} instance
                     sample.evt_coord.skyoffsetaltaz.lat,
                     frame=offset_frame
                 )
-                expected_dnde = source.dnde(sample.evt_energy)
-                expected_dndo = source.dndo(coords.icrs)
-                expected_flux = expected_dnde * expected_dndo
-
-                model_dnde = sample.dnde(sample.evt_energy)
-                model_dndo = sample.dndo(sample.evt_coord)
-                model_flux = model_dnde * model_dndo
+                expected_flux = source.dndedo(sample.evt_energy, coords.icrs)
+                model_flux = sample.dndedo(sample.evt_energy, sample.evt_coord)
 
                 weights = (1 / nsamples * dt * expected_flux / model_flux).decompose()
 

@@ -47,6 +47,9 @@ class Source:
     def dndo(self, coord):
         pass
 
+    def dndedo(self, energy, coord):
+        return self.dnde(energy) * self.dndo(coord)
+
 
 class DiskSource(Source):
     def __init__(self, pos, rad, dnde):
