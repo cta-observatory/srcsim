@@ -1,3 +1,4 @@
+import glob
 import numpy as np
 import pandas as pd
 import astropy.units as u
@@ -93,20 +94,15 @@ f"""{type(self).__name__} instance
         return self.dnde(energy) * self.dndo(coord)
 
 
-class MCEvents:
-    def __init__(self, file_name):
-        obs_ids = pd.read_hdf(file_name, "simulation/run_config")['obs_id'].to_list()
-        
-        self.file_name = file_name
-        self.samples = tuple(
-            MCSample(file_name, obs_id)
-            for obs_id in obs_ids
-        )
+class MCCollection:
+    def __init__(self, file_mask):
+        self.file_mask = file_mask
+        self.samples = self.read_files(file_mask)
 
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
-    {'File name':.<20s}: {self.file_name}
+    {'File mask':.<20s}: {self.file_mask}
     {'Obs IDs':.<20s}: {tuple(sample.obs_id for sample in self.samples)}
     {'Azimuth range':.<20s}: {u.Quantity([sample.tel_pos.az for sample in self.samples]).min():.2f} - {u.Quantity([sample.tel_pos.az for sample in self.samples]).max():.2f}
     {'Altitude range':.<20s}: {u.Quantity([sample.tel_pos.alt for sample in self.samples]).min():.2f} - {u.Quantity([sample.tel_pos.alt for sample in self.samples]).max():.2f}
@@ -114,3 +110,41 @@ f"""{type(self).__name__} instance
         )
 
         return super().__repr__()
+
+    @classmethod
+    def read_file(cls, file_name):
+        obs_ids = pd.read_hdf(file_name, "simulation/run_config")['obs_id'].to_list()
+
+        samples = tuple(
+            MCSample(file_name, obs_id)
+            for obs_id in obs_ids
+        )
+
+        return samples
+
+    @classmethod
+    def read_files(cls, file_mask):
+        file_list = glob.glob(file_mask)
+
+        samples = ()
+        for file_name in file_list:
+            samples += cls.read_file(file_name)
+
+        return samples
+
+    def get_closest(self, target_position):
+        tel_pos = SkyCoord([sample.tel_pos for sample in self.samples])
+        separation = target_position.separation(tel_pos)
+        idx = separation.argmin()
+
+        return self.samples[idx]
+
+    def get_nearby(self, target_position, search_radius):
+        samples = tuple(
+            filter(
+                lambda sample: target_position.separation(sample.tel_pos) <= search_radius,
+                self.samples
+            )
+        )
+
+        return samples
