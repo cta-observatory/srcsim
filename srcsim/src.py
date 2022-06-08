@@ -44,7 +44,7 @@ class Source:
         self.pos = pos
         self.dnde = dnde
         
-    def dndo(self, x, y):
+    def dndo(self, coord):
         pass
 
 
