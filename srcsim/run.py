@@ -52,9 +52,8 @@ f"""{type(self).__name__} instance
 
         return data_run
 
-    def get_events(self, mcevents, source):
+    def predict(self, mccollection, source, tel_pos_tolerance=None):
         events = []
-        nsamples = len(mcevents.samples)
         
         ntimebins = 10
         tedges = np.linspace(self.tstart, self.tstop, num=ntimebins+1)
@@ -64,7 +63,14 @@ f"""{type(self).__name__} instance
             frame = AltAz(obstime=tstart, location=self.obsloc)
             tel_pos = self.tel_pos.transform_to(frame)
         
-            for sample in mcevents.samples:
+            if tel_pos_tolerance is None:
+                mc = mccollection.get_closest(tel_pos.altaz)
+            else:
+                mc = mccollection.get_nearby(tel_pos, tel_pos_tolerance)
+
+            nsamples = len(mc.samples)
+
+            for sample in mc.samples:
                 # Astropy does not pass the location / time
                 # to the offset frame, need to do this manually
                 offset_frame = SkyOffsetFrame(
