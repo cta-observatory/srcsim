@@ -95,9 +95,13 @@ f"""{type(self).__name__} instance
 
 
 class MCCollection:
-    def __init__(self, file_mask):
+    def __init__(self, file_mask=None, samples=None):
         self.file_mask = file_mask
-        self.samples = self.read_files(file_mask)
+
+        if samples is None:
+            self.samples = self.read_files(file_mask)
+        else:
+            self.samples = samples
 
     def __repr__(self):
         print(
@@ -137,7 +141,7 @@ f"""{type(self).__name__} instance
         separation = target_position.separation(tel_pos)
         idx = separation.argmin()
 
-        return self.samples[idx]
+        return MCCollection(samples=(self.samples[idx],))
 
     def get_nearby(self, target_position, search_radius):
         samples = tuple(
@@ -147,4 +151,4 @@ f"""{type(self).__name__} instance
             )
         )
 
-        return samples
+        return MCCollection(samples=samples)
