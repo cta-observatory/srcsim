@@ -138,7 +138,7 @@ f"""{type(self).__name__} instance
 
     def get_closest(self, target_position):
         tel_pos = SkyCoord([sample.tel_pos for sample in self.samples])
-        separation = target_position.separation(tel_pos)
+        separation = tel_pos.separation(target_position)
         idx = separation.argmin()
 
         return MCCollection(samples=(self.samples[idx],))
@@ -146,7 +146,7 @@ f"""{type(self).__name__} instance
     def get_nearby(self, target_position, search_radius):
         samples = tuple(
             filter(
-                lambda sample: target_position.separation(sample.tel_pos) <= search_radius,
+                lambda sample: sample.tel_pos.separation(target_position) <= search_radius,
                 self.samples
             )
         )
