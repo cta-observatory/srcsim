@@ -55,9 +55,15 @@ f"""{type(self).__name__} instance
     def predict(self, mccollection, source, tel_pos_tolerance=None):
         events = []
         
-        ntimebins = 10
-        tedges = np.linspace(self.tstart, self.tstop, num=ntimebins+1)
-        tdelta = np.diff(tedges)
+        time_step = 1 * u.minute
+        tedges = Time(
+            np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value),
+            format='unix'
+        )
+        if len(tedges) > 1:
+            tdelta = np.diff(tedges)
+        else:
+            tdelta = [self.tstop - self.tstart]
         
         for tstart, dt in zip(tedges[:-1], tdelta):
             frame = AltAz(obstime=tstart, location=self.obsloc)
