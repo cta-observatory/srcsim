@@ -1,6 +1,8 @@
 import glob
+from re import M
 import numpy as np
 import pandas as pd
+import tables
 import astropy.units as u
 from astropy.coordinates import SkyCoord
 
@@ -10,7 +12,7 @@ def power_law(e, e0, norm, index):
 
 
 class MCSample:
-    def __init__(self, file_name, obs_id):
+    def __init__(self, file_name=None, obs_id=None, data_table=None, config_table=None):
         self.units = dict(
             energy = u.TeV,
             angle = u.rad,
@@ -22,11 +24,18 @@ class MCSample:
         lst_focal_length = 29.5 * u.m
         self.cam2angle = 1 * u.rad / lst_focal_length
 
-        self.file_name = file_name
-        self.obs_id = obs_id
-        self.config_table = pd.read_hdf(file_name, 'simulation/run_config').query(f'obs_id == {obs_id}')
-        self.data_table = pd.read_hdf(file_name, 'dl2/event/telescope/parameters/LST_LSTCam').query(f'obs_id == {obs_id}')
-        
+        # TODO: refine the logic below / implement nicer
+        if data_table is not None and config_table is not None:
+            self.file_name = None
+            self.obs_id = config_table['obs_id'].iloc[0]
+            self.config_table = config_table
+            self.data_table = data_table
+        else:
+            self.file_name = file_name
+            self.obs_id = obs_id
+            self.config_table = self.read_config(file_name, obs_id)
+            self.data_table = pd.read_hdf(file_name, 'dl2/event/telescope/parameters/LST_LSTCam').query(f'obs_id == {obs_id}')
+
         # Getting the telescope pointing
         pointing_data = self.data_table[['mc_az_tel', 'mc_alt_tel']].mean()
         self.tel_pos = SkyCoord(pointing_data['mc_az_tel'], pointing_data['mc_alt_tel'], unit=self.units['angle'], frame='altaz')
@@ -60,6 +69,35 @@ f"""{type(self).__name__} instance
 
         return super().__repr__()
     
+    @classmethod
+    def read_config(cls, file_name, obs_id):
+        with tables.open_file(file_name) as table:
+            cfg_table = table.root['/simulation/run_config']
+            obs_ids = [v['obs_id'] for v in cfg_table.iterrows()]
+
+            columns = (
+                'obs_id',
+                'num_showers',
+                'shower_reuse',
+                'min_scatter_range',
+                'max_scatter_range',
+                'energy_range_min',
+                'energy_range_max',
+                'spectral_index',
+                'min_viewcone_radius',
+                'max_viewcone_radius'
+            )
+
+            obs_idx = obs_ids.index(obs_id)
+
+            data = {}
+
+            for col_name in columns:
+                col_idx = cfg_table.colnames.index(col_name)
+                data[col_name] = (cfg_table[obs_idx][col_idx], )
+
+            return pd.DataFrame(data=data)
+
     def get_spec_data(self, n_events, emin, emax, index=-1):
         e0 = (emin * emax)**0.5
 
@@ -108,19 +146,58 @@ class MCCollection:
 f"""{type(self).__name__} instance
     {'File mask':.<20s}: {self.file_mask}
     {'Obs IDs':.<20s}: {tuple(sample.obs_id for sample in self.samples)}
-    {'Azimuth range':.<20s}: {u.Quantity([sample.tel_pos.az for sample in self.samples]).min():.2f} - {u.Quantity([sample.tel_pos.az for sample in self.samples]).max():.2f}
-    {'Altitude range':.<20s}: {u.Quantity([sample.tel_pos.alt for sample in self.samples]).min():.2f} - {u.Quantity([sample.tel_pos.alt for sample in self.samples]).max():.2f}
 """
         )
 
         return super().__repr__()
 
     @classmethod
+    def read_obs_ids(cls, file_name):
+        with tables.open_file(file_name, 'r') as data:
+            cfg_table = data.root['/simulation/run_config']
+            obs_ids = [v['obs_id'] for v in cfg_table.iterrows()]
+
+        return obs_ids
+
+    @classmethod
+    def read_config(cls, file_name):
+        with tables.open_file(file_name) as table:
+            cfg_table = table.root['/simulation/run_config']
+
+            columns = (
+                'obs_id',
+                'num_showers',
+                'shower_reuse',
+                'min_scatter_range',
+                'max_scatter_range',
+                'energy_range_min',
+                'energy_range_max',
+                'spectral_index',
+                'min_viewcone_radius',
+                'max_viewcone_radius'
+            )
+
+            data = {}
+
+            for col_name in columns:
+                data[col_name] = [
+                    v[col_name] for v in cfg_table.iterrows()
+                ]
+
+        return pd.DataFrame(data=data)
+
+    @classmethod
     def read_file(cls, file_name):
-        obs_ids = pd.read_hdf(file_name, "simulation/run_config")['obs_id'].to_list()
+        obs_ids = cls.read_obs_ids(file_name)
+
+        data = pd.read_hdf(file_name, "dl2/event/telescope/parameters/LST_LSTCam")
+        config = cls.read_config(file_name)
 
         samples = tuple(
-            MCSample(file_name, obs_id)
+            MCSample(
+                config_table = config.query(f'obs_id == {obs_id}'),
+                data_table = data.query(f'obs_id == {obs_id}')
+            )
             for obs_id in obs_ids
         )
 
