@@ -50,7 +50,7 @@ class MCSample:
         self.spec_data = self.get_spec_data(nevents, emin, emax, index)
         self.spec_data['norm'] /= ground_area
 
-        cam_x, cam_y = self.data_table[['reco_src_x', 'reco_src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle
+        cam_x, cam_y = self.data_table[['src_x', 'src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle
         self.evt_coord = SkyCoord(cam_x, cam_y, frame=self.tel_pos.skyoffset_frame())
 
         self.evt_energy = self.data_table['mc_energy'].to_numpy() * self.units['energy']
