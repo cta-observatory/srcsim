@@ -9,17 +9,45 @@ run:
         lon: '-17.890659 deg'
         lat: '28.761758 deg'
         height: '2200 m'
-source:
-    spatial:
+sources:
+    - name: "MyGauss"
+      spatial:
         type: 'gauss'
         ra: '83 deg'
         dec: '22 deg'
-        radius: '0.5 deg'
-        sigma: '0.5 deg'
-    spectral:
-        type: 'pwl'
-        norm: '1e-20 1/(cm2 s eV)'
-        e0: '100 GeV'
-        ecut: '0.1 TeV'
-        index: -2
-        beta: -0.3
+        sigma: '0.3 deg'
+      spectral:
+          type: 'pwl'
+          norm: '5e-21 1/(cm2 s eV)'
+          e0: '100 GeV'
+          ecut: '0.1 TeV'
+          index: -2
+          beta: -0.3
+          
+    - name: "MyDisk"
+      spatial:
+        type: 'disk'
+        ra: '83 deg'
+        dec: '20 deg'
+        radius: '0.3 deg'
+      spectral:
+          type: 'pwl'
+          norm: '5e-21 1/(cm2 s eV)'
+          e0: '100 GeV'
+          ecut: '0.1 TeV'
+          index: -2
+          beta: -0.3
+          
+    - name: "MyIso"
+      spatial:
+        type: 'iso'
+        ra: '83 deg'
+        dec: '20 deg'
+      spectral:
+          type: 'sbpwl'
+          norm: '76.4e-8 1/(m2 s GeV)'
+          e0: '1 TeV'
+          ebr: '1.25 TeV'
+          index: -2.68
+          index_delta: 0.18
+          smoothing: 3.6
