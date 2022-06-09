@@ -21,7 +21,7 @@ class MCSample:
         )
         
         # TODO: refine this value
-        lst_focal_length = 29.5 * u.m
+        lst_focal_length = 28.01 * u.m
         self.cam2angle = 1 * u.rad / lst_focal_length
 
         # TODO: refine the logic below / implement nicer
