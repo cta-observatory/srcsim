@@ -12,7 +12,7 @@ def generator(config):
     for par in ('norm', 'index', 'ecut', 'beta'):
         if par in cfg:
             cfg[par] = u.Quantity(cfg[par])
-        
+
     if cfg['type'] == 'pwl':
         spec = lambda e: power_law(e, norm=cfg['norm'], e0=cfg['e0'], index=cfg['index'])
     elif cfg['type'] == 'pwlec':
