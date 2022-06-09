@@ -12,37 +12,43 @@ def generator(config):
     else:
         cfg = config
 
-    for par in ('ra', 'dec', 'radius', 'sigma'):
-        if par in cfg['spatial']:
-            cfg['spatial'][par] = u.Quantity(cfg['spatial'][par])
-            
-    if cfg['spatial']['type'] == 'disk':
-        src = DiskSource(
-            SkyCoord(ra=cfg['spatial']['ra'], dec=cfg['spatial']['dec'], frame='icrs'),
-            cfg['spatial']['radius'],
-            specgen(cfg['spectral'])
-        )
-    elif cfg['spatial']['type'] == 'gauss':
-        src = GaussSource(
-            SkyCoord(ra=cfg['spatial']['ra'], dec=cfg['spatial']['dec'], frame='icrs'),
-            cfg['spatial']['sigma'],
-            specgen(cfg['spectral'])
-        )
-    elif cfg['spatial']['type'] == 'iso':
-        src = IsotropicSource(
-            SkyCoord(ra=cfg['spatial']['ra'], dec=cfg['spatial']['dec'], frame='icrs'),
-            specgen(cfg['spectral'])
-        )
-    else:
-        raise ValueError(f"Unknown source type '{cfg['type']}'")
+    sources = []
+
+    for scfg in cfg:
+        for par in ('ra', 'dec', 'radius', 'sigma'):
+            if par in scfg['spatial']:
+                scfg['spatial'][par] = u.Quantity(scfg['spatial'][par])
+
+        if scfg['spatial']['type'] == 'disk':
+            src = DiskSource(
+                SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
+                scfg['spatial']['radius'],
+                specgen(scfg['spectral'])
+            )
+        elif scfg['spatial']['type'] == 'gauss':
+            src = GaussSource(
+                SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
+                scfg['spatial']['sigma'],
+                specgen(scfg['spectral'])
+            )
+        elif scfg['spatial']['type'] == 'iso':
+            src = IsotropicSource(
+                SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
+                specgen(scfg['spectral'])
+            )
+        else:
+            raise ValueError(f"Unknown source type '{scfg['type']}'")
+
+        sources.append(src)
     
-    return src
+    return sources
 
 
 class Source:
-    def __init__(self, pos, dnde):
+    def __init__(self, pos, dnde, name='source'):
         self.pos = pos
         self.dnde = dnde
+        self.name = name
         
     def dndo(self, coord):
         pass
@@ -59,6 +65,7 @@ class DiskSource(Source):
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
+    {'Name':.<20s}: {self.name}
     {'Position':.<20s}: {self.pos}
     {'Radius':.<20s}: {self.rad}
 """
@@ -81,6 +88,7 @@ class GaussSource(Source):
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
+    {'Name':.<20s}: {self.name}
     {'Position':.<20s}: {self.pos}
     {'Sigma':.<20s}: {self.sigma}
 """
@@ -103,6 +111,7 @@ class IsotropicSource(Source):
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
+    {'Name':.<20s}: {self.name}
     {'Position':.<20s}: {self.pos}
 """
         )
