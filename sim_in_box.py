@@ -46,18 +46,22 @@ if __name__ == '__main__':
 
     info_message('Loading MCs')
     mc = {
-        emission_type: MCCollection(cfg['mc']['files'][emission_type])
-        for emission_type in cfg['mc']['files']
+        emission_type: MCCollection(cfg['mc'][emission_type]['files'])
+        for emission_type in cfg['mc']
     }
 
-    if cfg['mc']['max_samples'] is not None:
-        for emission_type in mc:
-            mc[emission_type].samples = mc[emission_type].samples[:cfg['mc']['max_samples']]
+    for emission_type in mc:
+        if cfg['mc'][emission_type]['max_samples'] is not None:
+            mc[emission_type].samples = mc[emission_type].samples[:cfg['mc'][emission_type]['max_samples']]
 
-    if cfg['mc']['search_radius'] is not None:
-        search_radius = u.Quantity(cfg['mc']['search_radius'])
-    else:
-        search_radius = None
+    search_radius = {
+        emission_type: cfg['mc'][emission_type]['search_radius']
+        for emission_type in mc
+    }
+
+    for emission_type in search_radius:
+        if search_radius[emission_type] is not None:
+            search_radius[emission_type] = u.Quantity(search_radius[emission_type])
 
     info_message('Preparing sources')
     srcs = srcgen(cfg['sources'])
@@ -72,7 +76,7 @@ if __name__ == '__main__':
                 run.predict(
                     mc,
                     src,
-                    tel_pos_tolerance=search_radius
+                    search_radius[src.emission_type]
                 )
                 for src in srcs
             ]
