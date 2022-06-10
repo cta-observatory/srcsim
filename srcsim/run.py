@@ -52,10 +52,9 @@ f"""{type(self).__name__} instance
 
         return data_run
 
-    def predict(self, mccollections, source, tel_pos_tolerance=None):
+    def predict(self, mccollections, source, tel_pos_tolerance=None, time_step=1*u.minute):
         events = []
-        
-        time_step = 1 * u.minute
+
         tedges = Time(
             np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value),
             format='unix'
