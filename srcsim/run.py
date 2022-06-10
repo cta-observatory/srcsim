@@ -111,7 +111,10 @@ f"""{type(self).__name__} instance
                 )
 
                 # Telescope pointing
-                evt = evt.drop(columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel'])
+                evt = evt.drop(
+                    columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel'],
+                    errors='ignore'
+                )
                 evt = evt.assign(
                     mc_az_tel = tel_pos.az.to('rad').value,
                     mc_alt_tel = tel_pos.alt.to('rad').value,
@@ -125,7 +128,7 @@ f"""{type(self).__name__} instance
                     evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
                     frame=offset_frame
                 )
-                evt = evt.drop(columns=['reco_az', 'reco_alt'])
+                evt = evt.drop(columns=['reco_az', 'reco_alt'], errors='ignore')
                 evt = evt.assign(
                     reco_az = reco_coords.altaz.az.to('rad').value,
                     reco_alt = reco_coords.altaz.alt.to('rad').value,
