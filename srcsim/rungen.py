@@ -1,7 +1,8 @@
+import yaml
 import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import AltAz
+from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 
 from .run import DataRun
 
@@ -36,63 +37,119 @@ def get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step):
     return tstarts, tstops
 
 
-def runs_in_box(obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart=None, time_step=1*u.minute):
-    if tstart is None:
-        tstart = Time('1970-01-01')
+class AltAzBoxGenerator:
+    def __init__(self, obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart=None, time_step=1*u.minute):
+        self.obsloc = obsloc
+        self.tel_pos = tel_pos
+        self.tobs = tobs
+        self.altmin = altmin
+        self.altmax = altmax
+        self.azmin = azmin
+        self.azmax = azmax
+        self.tstart = tstart
+        self.time_step = time_step
 
-    tel_altaz = get_trajectory(
-        tel_pos,
-        tstart,
-        tstop=tstart + 1 * u.d,
-        time_step=time_step,
-        obsloc=obsloc
-    )
-    
-    # Second pass with the start on the source anti-culmination
-    tstart = tel_altaz.obstime[tel_altaz.alt.argmin()]
-    tel_altaz = get_trajectory(
-        tel_pos,
-        tstart,
-        tstop=tstart + 1 * u.d,
-        time_step=time_step,
-        obsloc=obsloc
-    )
-    
-    tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
-    run_durations = tstops - tstarts
-    
-    nsequences = (tobs / np.sum(run_durations)).decompose()
-    ndays_full = np.floor(nsequences)
-    ndays_total = np.ceil(nsequences)
-    
-    # Third pass - to cover the simulation time interval with fully completed runs
-    tel_altaz = get_trajectory(
-        tel_pos,
-        tstart,
-        tstop=tstart + ndays_full * u.d,
-        time_step=time_step,
-        obsloc=obsloc
-    )
-    tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
-    remaining_tobs = tobs - np.sum(tstops - tstarts)
-    
-    # Fourth pass - additional incomplete runs
-    _tel_altaz = get_trajectory(
-        tel_pos,
-        tstart=tstart + ndays_full * u.d,
-        tstop=tstart + ndays_total * u.d,
-        time_step=time_step,
-        obsloc=obsloc
-    )
-    _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, time_step)
-    _tstops = Time(_tstarts + remaining_tobs / (len(_tstarts)))
-    
-    tstarts = Time([tstarts, _tstarts])
-    tstops = Time([tstops, _tstops])
-    
-    runs = tuple(
-        DataRun(tel_pos, tstart, tstop, obsloc)
-        for tstart, tstop in zip(tstarts, tstops)
-    )
-    
-    return runs
+    def __repr__(self):
+        print(
+f"""{type(self).__name__} instance
+    {'Obsloc':.<20s}: {self.obsloc}
+    {'Tel. pos':.<20s}: {self.tel_pos}
+    {'Alt range':.<20s}: [{self.altmin.to('deg').value:.2f} - {self.altmax.to('deg').value:.2f}] deg
+    {'Az range':.<20s}: [{self.azmin.to('deg').value:.2f} - {self.azmax.to('deg').value:.2f}] deg
+    {'T start':.<20s}: {self.tstart}
+    {'T step':.<20s}: {self.time_step}
+"""
+        )
+
+        return super().__repr__()
+
+    @classmethod
+    def get_runs_from_config(cls, config):
+        if isinstance(config, str):
+            cfg = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
+        else:
+            cfg = config
+        
+        tel_pos = SkyCoord(
+            u.Quantity(cfg['pointing']['ra']),
+            u.Quantity(cfg['pointing']['dec']),
+            frame='icrs'
+        )
+
+        azmin = u.Quantity(cfg['box']['az']['min'])
+        azmax = u.Quantity(cfg['box']['az']['max'])
+        altmin = u.Quantity(cfg['box']['alt']['min'])
+        altmax = u.Quantity(cfg['box']['alt']['max'])
+
+        tstart = Time(cfg['time']['start'])
+        tobs = u.Quantity(cfg['time']['duration'])
+        time_step = u.Quantity(cfg['time']['step'])
+        obsloc = EarthLocation(
+            lat=u.Quantity(cfg['location']['lat']),
+            lon=u.Quantity(cfg['location']['lon']),
+            height=u.Quantity(cfg['location']['height']),
+        )
+
+        return cls.get_runs(obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart, time_step)
+
+    @classmethod
+    def get_runs(cls, obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart=None, time_step=1*u.minute):
+        if tstart is None:
+            tstart = Time('1970-01-01')
+
+        tel_altaz = get_trajectory(
+            tel_pos,
+            tstart,
+            tstop=tstart + 1 * u.d,
+            time_step=time_step,
+            obsloc=obsloc
+        )
+        
+        # Second pass with the start on the source anti-culmination
+        tstart = tel_altaz.obstime[tel_altaz.alt.argmin()]
+        tel_altaz = get_trajectory(
+            tel_pos,
+            tstart,
+            tstop=tstart + 1 * u.d,
+            time_step=time_step,
+            obsloc=obsloc
+        )
+        
+        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
+        run_durations = tstops - tstarts
+        
+        nsequences = (tobs / np.sum(run_durations)).decompose()
+        ndays_full = np.floor(nsequences)
+        ndays_total = np.ceil(nsequences)
+        
+        # Third pass - to cover the simulation time interval with fully completed runs
+        tel_altaz = get_trajectory(
+            tel_pos,
+            tstart,
+            tstop=tstart + ndays_full * u.d,
+            time_step=time_step,
+            obsloc=obsloc
+        )
+        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
+        remaining_tobs = tobs - np.sum(tstops - tstarts)
+        
+        # Fourth pass - additional incomplete runs
+        _tel_altaz = get_trajectory(
+            tel_pos,
+            tstart=tstart + ndays_full * u.d,
+            tstop=tstart + ndays_total * u.d,
+            time_step=time_step,
+            obsloc=obsloc
+        )
+        _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, time_step)
+        _tstops = Time(_tstarts + remaining_tobs / (len(_tstarts)))
+        
+        tstarts = Time([tstarts, _tstarts])
+        tstops = Time([tstops, _tstops])
+        
+        runs = tuple(
+            DataRun(tel_pos, tstart, tstop, obsloc)
+            for tstart, tstop in zip(tstarts, tstops)
+        )
+        
+        return runs
