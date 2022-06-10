@@ -1,3 +1,12 @@
+mc:
+    gamma:
+        files: '../mc/dl2_gamma-diffuse_20deg_180deg_20201125_v0.6.3_prod5_v00_testing.h5'
+        search_radius: '180 deg'
+        max_samples: 10
+    proton:
+        files: '../mc/dl2_proton_20deg_180deg_20201125_v0.6.3_prod5_v00_testing.h5'
+        search_radius: '180 deg'
+        max_samples: 10
 run:
     pointing:
         ra: '83 deg'
@@ -11,6 +20,7 @@ run:
         height: '2200 m'
 sources:
     - name: "MyGauss"
+      emission_type: "gamma"
       spatial:
         type: 'gauss'
         ra: '83 deg'
@@ -25,6 +35,7 @@ sources:
           beta: -0.3
           
     - name: "MyDisk"
+      emission_type: "gamma"
       spatial:
         type: 'disk'
         ra: '83 deg'
@@ -39,15 +50,17 @@ sources:
           beta: -0.3
           
     - name: "MyIso"
+      # From https://ui.adsabs.harvard.edu/abs/2019SciA....5.3793A/abstract
+      emission_type: "proton"
       spatial:
         type: 'iso'
         ra: '83 deg'
         dec: '20 deg'
       spectral:
           type: 'sbpwl'
-          norm: '76.4e-8 1/(m2 s GeV)'
+          norm: '109e-5 1/(m2 s GeV)'
           e0: '1 TeV'
-          ebr: '1.25 TeV'
-          index: -2.68
-          index_delta: 0.18
-          smoothing: 3.6
+          ebr: '13.6 TeV'
+          index: -2.60
+          index_delta: -0.25
+          smoothing: 5.0
