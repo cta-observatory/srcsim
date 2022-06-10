@@ -1,0 +1,72 @@
+io:
+    out: "out/"
+mc:
+    files:
+        gamma: 'mc/dl2_gamma-diffuse_20deg_180deg_20201125_v0.6.3_prod5_v00_testing.h5'
+        proton: 'mc/dl2_proton_20deg_180deg_20201125_v0.6.3_prod5_v00_testing.h5'
+    search_radius: '180 deg'
+    max_samples: 10
+rungen:
+    pointing:
+        ra: '83 deg'
+        dec: '21 deg'
+    box:
+        alt:
+            min: '20 deg'
+            max: '60 deg'
+        az:
+            min: '90 deg'
+            max: '100 deg'
+    time: 
+        start: '2022-05-31'
+        duration: '2 hr'
+        accuracy: '1 min'
+    location:
+        lon: '-17.890659 deg'
+        lat: '28.761758 deg'
+        height: '2200 m'
+sources:
+    - name: "MyGauss"
+      emission_type: "gamma"
+      spatial:
+        type: 'gauss'
+        ra: '83 deg'
+        dec: '22 deg'
+        sigma: '0.3 deg'
+      spectral:
+          type: 'lp'
+          norm: '3.23e-11 1/(cm2 s TeV)'
+          e0: '100 GeV'
+          index: -2.47
+          beta: -0.24
+          
+    - name: "MyDisk"
+      emission_type: "gamma"
+      spatial:
+        type: 'disk'
+        ra: '83 deg'
+        dec: '20 deg'
+        radius: '0.3 deg'
+      spectral:
+          type: 'pwl'
+          norm: '5e-21 1/(cm2 s eV)'
+          e0: '100 GeV'
+          ecut: '0.1 TeV'
+          index: -2
+          beta: -0.3
+          
+    - name: "MyIso"
+      # From https://ui.adsabs.harvard.edu/abs/2019SciA....5.3793A/abstract
+      emission_type: "proton"
+      spatial:
+        type: 'iso'
+        ra: '83 deg'
+        dec: '20 deg'
+      spectral:
+          type: 'sbpwl'
+          norm: '109e-7 1/(m2 s GeV)'
+          e0: '1 TeV'
+          ebr: '13.6 TeV'
+          index: -2.60
+          index_delta: -0.25
+          smoothing: 5.0
