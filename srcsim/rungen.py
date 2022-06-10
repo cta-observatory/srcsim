@@ -122,30 +122,41 @@ f"""{type(self).__name__} instance
         ndays_full = np.floor(nsequences)
         ndays_total = np.ceil(nsequences)
         
-        # Third pass - to cover the simulation time interval with fully completed runs
-        tel_altaz = get_trajectory(
-            tel_pos,
-            tstart,
-            tstop=tstart + ndays_full * u.d,
-            time_step=time_step,
-            obsloc=obsloc
-        )
-        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
-        remaining_tobs = tobs - np.sum(tstops - tstarts)
+        if ndays_full > 0:
+            # Third pass - to cover the simulation time interval with fully completed runs
+            tel_altaz = get_trajectory(
+                tel_pos,
+                tstart,
+                tstop=tstart + ndays_full * u.d,
+                time_step=time_step,
+                obsloc=obsloc
+            )
+            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
+            remaining_tobs = tobs - np.sum(tstops - tstarts)
         
-        # Fourth pass - additional incomplete runs
-        _tel_altaz = get_trajectory(
-            tel_pos,
-            tstart=tstart + ndays_full * u.d,
-            tstop=tstart + ndays_total * u.d,
-            time_step=time_step,
-            obsloc=obsloc
-        )
-        _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, time_step)
-        _tstops = Time(_tstarts + remaining_tobs / (len(_tstarts)))
-        
-        tstarts = Time([tstarts, _tstarts])
-        tstops = Time([tstops, _tstops])
+            # Fourth pass - additional incomplete runs
+            _tel_altaz = get_trajectory(
+                tel_pos,
+                tstart=tstart + ndays_full * u.d,
+                tstop=tstart + ndays_total * u.d,
+                time_step=time_step,
+                obsloc=obsloc
+            )
+            _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, time_step)
+            _tstops = Time(_tstarts + remaining_tobs / (len(_tstarts)))
+
+            tstarts = Time([tstarts, _tstarts])
+            tstops = Time([tstops, _tstops])
+
+        else:
+            tel_altaz = get_trajectory(
+                tel_pos,
+                tstart,
+                tstop=tstart + ndays_total * u.d,
+                time_step=time_step,
+                obsloc=obsloc
+            )
+            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
         
         runs = tuple(
             DataRun(tel_pos, tstart, tstop, obsloc)
