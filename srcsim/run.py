@@ -19,8 +19,8 @@ class DataRun:
         print(
 f"""{type(self).__name__} instance
     {'Tel. RA/Dec':.<20s}: {self.tel_pos}
-    {'Tstart':.<20s}: {self.tstart}
-    {'Tstop':.<20s}: {self.tstop}
+    {'Tstart':.<20s}: {self.tstart.isot}
+    {'Tstop':.<20s}: {self.tstop.isot}
     {'Tel. azimuth':.<20s}: [{self.tel_pos.transform_to(frame_start).az.to('deg'):.2f} - {self.tel_pos.transform_to(frame_stop).az.to('deg'):.2f}]
     {'Tel. alt':.<20s}: [{self.tel_pos.transform_to(frame_start).alt.to('deg'):.2f} - {self.tel_pos.transform_to(frame_stop).alt.to('deg'):.2f}]
 """
