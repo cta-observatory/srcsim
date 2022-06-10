@@ -38,31 +38,6 @@ def get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step):
 
 
 class AltAzBoxGenerator:
-    def __init__(self, obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart=None, time_step=1*u.minute):
-        self.obsloc = obsloc
-        self.tel_pos = tel_pos
-        self.tobs = tobs
-        self.altmin = altmin
-        self.altmax = altmax
-        self.azmin = azmin
-        self.azmax = azmax
-        self.tstart = tstart
-        self.time_step = time_step
-
-    def __repr__(self):
-        print(
-f"""{type(self).__name__} instance
-    {'Obsloc':.<20s}: {self.obsloc}
-    {'Tel. pos':.<20s}: {self.tel_pos}
-    {'Alt range':.<20s}: [{self.altmin.to('deg').value:.2f} - {self.altmax.to('deg').value:.2f}] deg
-    {'Az range':.<20s}: [{self.azmin.to('deg').value:.2f} - {self.azmax.to('deg').value:.2f}] deg
-    {'T start':.<20s}: {self.tstart}
-    {'T step':.<20s}: {self.time_step}
-"""
-        )
-
-        return super().__repr__()
-
     @classmethod
     def get_runs_from_config(cls, config):
         if isinstance(config, str):
@@ -82,18 +57,18 @@ f"""{type(self).__name__} instance
         altmax = u.Quantity(cfg['box']['alt']['max'])
 
         tstart = Time(cfg['time']['start'])
-        tobs = u.Quantity(cfg['time']['duration'])
-        time_step = u.Quantity(cfg['time']['step'])
+        duration = u.Quantity(cfg['time']['duration'])
+        accuracy = u.Quantity(cfg['time']['accuracy'])
         obsloc = EarthLocation(
             lat=u.Quantity(cfg['location']['lat']),
             lon=u.Quantity(cfg['location']['lon']),
             height=u.Quantity(cfg['location']['height']),
         )
 
-        return cls.get_runs(obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart, time_step)
+        return cls.get_runs(obsloc, tel_pos, duration, altmin, altmax, azmin, azmax, tstart, accuracy)
 
     @classmethod
-    def get_runs(cls, obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart=None, time_step=1*u.minute):
+    def get_runs(cls, obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart=None, accuracy=1*u.minute):
         if tstart is None:
             tstart = Time('1970-01-01')
 
@@ -101,7 +76,7 @@ f"""{type(self).__name__} instance
             tel_pos,
             tstart,
             tstop=tstart + 1 * u.d,
-            time_step=time_step,
+            time_step=accuracy,
             obsloc=obsloc
         )
         
@@ -111,11 +86,11 @@ f"""{type(self).__name__} instance
             tel_pos,
             tstart,
             tstop=tstart + 1 * u.d,
-            time_step=time_step,
+            time_step=accuracy,
             obsloc=obsloc
         )
         
-        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
+        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
         run_durations = tstops - tstarts
         
         nsequences = (tobs / np.sum(run_durations)).decompose()
@@ -128,10 +103,10 @@ f"""{type(self).__name__} instance
                 tel_pos,
                 tstart,
                 tstop=tstart + ndays_full * u.d,
-                time_step=time_step,
+                time_step=accuracy,
                 obsloc=obsloc
             )
-            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
+            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
             remaining_tobs = tobs - np.sum(tstops - tstarts)
         
             # Fourth pass - additional incomplete runs
@@ -139,10 +114,10 @@ f"""{type(self).__name__} instance
                 tel_pos,
                 tstart=tstart + ndays_full * u.d,
                 tstop=tstart + ndays_total * u.d,
-                time_step=time_step,
+                time_step=accuracy,
                 obsloc=obsloc
             )
-            _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, time_step)
+            _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, accuracy)
             _tstops = Time(_tstarts + remaining_tobs / (len(_tstarts)))
 
             tstarts = Time([tstarts, _tstarts])
@@ -153,10 +128,10 @@ f"""{type(self).__name__} instance
                 tel_pos,
                 tstart,
                 tstop=tstart + ndays_total * u.d,
-                time_step=time_step,
+                time_step=accuracy,
                 obsloc=obsloc
             )
-            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step)
+            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
         
         runs = tuple(
             DataRun(tel_pos, tstart, tstop, obsloc)
