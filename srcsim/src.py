@@ -21,20 +21,23 @@ def generator(config):
 
         if scfg['spatial']['type'] == 'disk':
             src = DiskSource(
-                SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
-                scfg['spatial']['radius'],
-                specgen(scfg['spectral'])
+                emission_type=scfg['emission_type'],
+                pos=SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
+                rad=scfg['spatial']['radius'],
+                dnde=specgen(scfg['spectral'])
             )
         elif scfg['spatial']['type'] == 'gauss':
             src = GaussSource(
-                SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
-                scfg['spatial']['sigma'],
-                specgen(scfg['spectral'])
+                emission_type=scfg['emission_type'],
+                pos=SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
+                sigma=scfg['spatial']['sigma'],
+                dnde=specgen(scfg['spectral'])
             )
         elif scfg['spatial']['type'] == 'iso':
             src = IsotropicSource(
-                SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
-                specgen(scfg['spectral'])
+                emission_type=scfg['emission_type'],
+                pos=SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
+                dnde=specgen(scfg['spectral'])
             )
         else:
             raise ValueError(f"Unknown source type '{scfg['type']}'")
@@ -45,10 +48,11 @@ def generator(config):
 
 
 class Source:
-    def __init__(self, pos, dnde, name='source'):
+    def __init__(self, emission_type, pos, dnde, name='source'):
         self.pos = pos
         self.dnde = dnde
         self.name = name
+        self.emission_type = emission_type
         
     def dndo(self, coord):
         pass
@@ -58,14 +62,15 @@ class Source:
 
 
 class DiskSource(Source):
-    def __init__(self, pos, rad, dnde):
-        super().__init__(pos, dnde)
+    def __init__(self, emission_type, pos, rad, dnde):
+        super().__init__(emission_type, pos, dnde)
         self.rad = rad
 
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
     {'Name':.<20s}: {self.name}
+    {'Emission type':.<20s}: {self.emission_type}
     {'Position':.<20s}: {self.pos}
     {'Radius':.<20s}: {self.rad}
 """
@@ -81,14 +86,15 @@ f"""{type(self).__name__} instance
 
 
 class GaussSource(Source):
-    def __init__(self, pos, sigma, dnde):
-        super().__init__(pos, dnde)
+    def __init__(self, emission_type, pos, sigma, dnde):
+        super().__init__(emission_type, pos, dnde)
         self.sigma = sigma
 
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
     {'Name':.<20s}: {self.name}
+    {'Emission type':.<20s}: {self.emission_type}
     {'Position':.<20s}: {self.pos}
     {'Sigma':.<20s}: {self.sigma}
 """
@@ -105,13 +111,14 @@ f"""{type(self).__name__} instance
 
 
 class IsotropicSource(Source):
-    def __init__(self, pos, dnde):
-        super().__init__(pos, dnde)
+    def __init__(self, emission_type, pos, dnde):
+        super().__init__(emission_type, pos, dnde)
 
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
     {'Name':.<20s}: {self.name}
+    {'Emission type':.<20s}: {self.emission_type}
     {'Position':.<20s}: {self.pos}
 """
         )

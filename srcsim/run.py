@@ -52,7 +52,7 @@ f"""{type(self).__name__} instance
 
         return data_run
 
-    def predict(self, mccollection, source, tel_pos_tolerance=None):
+    def predict(self, mccollections, source, tel_pos_tolerance=None):
         events = []
         
         time_step = 1 * u.minute
@@ -70,9 +70,9 @@ f"""{type(self).__name__} instance
             tel_pos = self.tel_pos.transform_to(frame)
         
             if tel_pos_tolerance is None:
-                mc = mccollection.get_closest(tel_pos.altaz)
+                mc = mccollections[source.emission_type].get_closest(tel_pos.altaz)
             else:
-                mc = mccollection.get_nearby(tel_pos, tel_pos_tolerance)
+                mc = mccollections[source.emission_type].get_nearby(tel_pos, tel_pos_tolerance)
 
             nsamples = len(mc.samples)
 
