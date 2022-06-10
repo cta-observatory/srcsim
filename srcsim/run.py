@@ -105,10 +105,31 @@ f"""{type(self).__name__} instance
 
                 evt = sample.data_table.iloc[idx]
 
-                evt.loc[slice(None), 'mc_az_tel'] = tel_pos.az.to('rad').value
-                evt.loc[slice(None), 'mc_alt_tel'] = tel_pos.alt.to('rad').value
+                # Events arrival time
+                evt = evt.assign(
+                    dragon_time = np.linspace(tstart.unix, (tstart+dt).unix, num=len(evt))
+                )
 
-                evt = evt.assign(dragon_time = np.linspace(tstart.unix, (tstart+dt).unix, num=len(evt)))
+                # Telescope pointing
+                evt = evt.drop(columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel'])
+                evt = evt.assign(
+                    mc_az_tel = tel_pos.az.to('rad').value,
+                    mc_alt_tel = tel_pos.alt.to('rad').value,
+                    az_tel = tel_pos.az.to('rad').value,
+                    alt_tel = tel_pos.alt.to('rad').value
+                )
+
+                # Reconstructed events coordinates
+                reco_coords = SkyCoord(
+                    evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                    evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                    frame=offset_frame
+                )
+                evt = evt.drop(columns=['reco_az', 'reco_alt'])
+                evt = evt.assign(
+                    reco_az = reco_coords.altaz.az.to('rad').value,
+                    reco_alt = reco_coords.altaz.alt.to('rad').value,
+                )
 
                 events.append(evt)
             
