@@ -229,3 +229,17 @@ f"""{type(self).__name__} instance
         )
 
         return MCCollection(samples=samples)
+
+    def get_in_box(self, target_position, max_lon_offset, max_lat_offset):
+        tel_pos = SkyCoord([sample.tel_pos for sample in self.samples])
+        tel_pos = tel_pos.transform_to(target_position.frame)
+
+        lon_offset, lat_offset = tel_pos.altaz.spherical_offsets_to(target_position.altaz)
+        inbox = (np.absolute(lon_offset) <= max_lon_offset) & (np.absolute(lat_offset) <= max_lat_offset)
+
+        if sum(inbox):
+            samples = tuple(sample for sample, take_it in zip(self.samples, inbox) if take_it)
+        else:
+            samples = ()
+
+        return MCCollection(samples=samples)
