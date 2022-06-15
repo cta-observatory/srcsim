@@ -52,6 +52,21 @@ f"""{type(self).__name__} instance
 
         return data_run
 
+    def to_dict(self):
+        data = {'pointing': {}, 'time': {}, 'location': {}}
+
+        data['pointing']['ra'] = str(self.tel_pos.icrs.ra.to('deg').to_string())
+        data['pointing']['dec'] = str(self.tel_pos.icrs.dec.to('deg').to_string())
+
+        data['time']['start'] = self.tstart.isot
+        data['time']['stop'] = self.tstop.isot
+
+        data['location']['lon'] = str(self.obsloc.lon.to('deg').to_string())
+        data['location']['lat'] = str(self.obsloc.lat.to('deg').to_string())
+        data['location']['height'] = str(self.obsloc.height.to('m').to_string())
+
+        return data
+
     def predict(self, mccollections, source, tel_pos_tolerance=None, time_step=1*u.minute):
         events = []
 
