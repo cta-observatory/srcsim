@@ -58,14 +58,14 @@ f"""{type(self).__name__} instance
     def to_dict(self):
         data = {'id': self.id, 'pointing': {}, 'time': {}, 'location': {}}
 
-        data['pointing']['ra'] = str(self.tel_pos.icrs.ra.to('deg').to_string())
-        data['pointing']['dec'] = str(self.tel_pos.icrs.dec.to('deg').to_string())
+        data['pointing']['ra'] = str(self.tel_pos.icrs.ra.to('deg').value) + ' deg'
+        data['pointing']['dec'] = str(self.tel_pos.icrs.dec.to('deg').value) + ' deg'
 
         data['time']['start'] = self.tstart.isot
         data['time']['stop'] = self.tstop.isot
 
-        data['location']['lon'] = str(self.obsloc.lon.to('deg').to_string())
-        data['location']['lat'] = str(self.obsloc.lat.to('deg').to_string())
+        data['location']['lon'] = str(self.obsloc.lon.to('deg').value) + ' deg'
+        data['location']['lat'] = str(self.obsloc.lat.to('deg').value) + ' deg'
         data['location']['height'] = str(self.obsloc.height.to('m').to_string())
 
         return data
