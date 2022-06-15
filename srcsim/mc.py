@@ -232,7 +232,7 @@ f"""{type(self).__name__} instance
 
     def get_in_box(self, target_position, max_lon_offset, max_lat_offset):
         tel_pos = SkyCoord([sample.tel_pos for sample in self.samples])
-        tel_pos = tel_pos.transform_to(target_position.frame)
+        target_position = SkyCoord(target_position.altaz.az, target_position.altaz.alt, frame='altaz')
 
         lon_offset, lat_offset = tel_pos.altaz.spherical_offsets_to(target_position.altaz)
         inbox = (np.absolute(lon_offset) <= max_lon_offset) & (np.absolute(lat_offset) <= max_lat_offset)
