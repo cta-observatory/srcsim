@@ -7,7 +7,8 @@ from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
 
 
 class DataRun:
-    def __init__(self, tel_pos, tstart, tstop, obsloc):
+    def __init__(self, tel_pos, tstart, tstop, obsloc, id=0):
+        self.id = id
         self.tel_pos = tel_pos
         self.obsloc = obsloc
         self.tstart = tstart
@@ -18,6 +19,7 @@ class DataRun:
         frame_stop = AltAz(obstime=self.tstop, location=self.obsloc)
         print(
 f"""{type(self).__name__} instance
+    {'ID':.<20s}: {self.id}
     {'Tel. RA/Dec':.<20s}: {self.tel_pos}
     {'Tstart':.<20s}: {self.tstart.isot}
     {'Tstop':.<20s}: {self.tstop.isot}
@@ -47,13 +49,14 @@ f"""{type(self).__name__} instance
                 lat=u.Quantity(cfg['location']['lat']),
                 lon=u.Quantity(cfg['location']['lon']),
                 height=u.Quantity(cfg['location']['height']),
-            )
+            ),
+            cfg['id'] if 'id' in cfg else 0
         )
 
         return data_run
 
     def to_dict(self):
-        data = {'pointing': {}, 'time': {}, 'location': {}}
+        data = {'id': self.id, 'pointing': {}, 'time': {}, 'location': {}}
 
         data['pointing']['ra'] = str(self.tel_pos.icrs.ra.to('deg').to_string())
         data['pointing']['dec'] = str(self.tel_pos.icrs.dec.to('deg').to_string())

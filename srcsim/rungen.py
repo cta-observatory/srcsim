@@ -134,8 +134,8 @@ class AltAzBoxGenerator:
             tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
         
         runs = tuple(
-            DataRun(tel_pos, tstart, tstop, obsloc)
-            for tstart, tstop in zip(tstarts, tstops)
+            DataRun(tel_pos, tstart, tstop, obsloc, run_id)
+            for run_id, (tstart, tstop) in enumerate(zip(tstarts, tstops))
         )
         
         return runs
