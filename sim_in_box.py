@@ -61,7 +61,10 @@ if __name__ == '__main__':
 
     for emission_type in search_radius:
         if search_radius[emission_type] is not None:
-            search_radius[emission_type] = u.Quantity(search_radius[emission_type])
+            if isinstance(search_radius[emission_type], str):
+                search_radius[emission_type] = u.Quantity(search_radius[emission_type])
+            else:
+                search_radius[emission_type] = [u.Quantity(s) for s in search_radius[emission_type]]
 
     info_message('Preparing sources')
     srcs = srcgen(cfg['sources'])

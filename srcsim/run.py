@@ -70,8 +70,16 @@ f"""{type(self).__name__} instance
         
             if tel_pos_tolerance is None:
                 mc = mccollections[source.emission_type].get_closest(tel_pos.altaz)
-            else:
+            elif isinstance(tel_pos_tolerance, u.Quantity):
                 mc = mccollections[source.emission_type].get_nearby(tel_pos, tel_pos_tolerance)
+            elif isinstance(tel_pos_tolerance, list) or isinstance(tel_pos_tolerance, tuple):
+                mc = mccollections[source.emission_type].get_in_box(
+                    tel_pos,
+                    max_lon_offset=tel_pos_tolerance[0],
+                    max_lat_offset=tel_pos_tolerance[1],
+                )
+            else:
+                raise ValueError(f"Data type '{type(tel_pos_tolerance)}' for argument 'tel_pos_tolerance' is not supported")
 
             nsamples = len(mc.samples)
 

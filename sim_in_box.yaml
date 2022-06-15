@@ -7,8 +7,8 @@ mc:
         max_samples: 10
     proton:
         files: 'mc/dl2_proton_20deg_180deg_20201125_v0.6.3_prod5_v00_testing.h5'
-        search_radius: '180 deg'
-        max_samples: 10
+        search_radius: ['180 deg', '180 deg']
+        max_samples: 100
 
 rungen:
     pointing:
