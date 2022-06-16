@@ -54,6 +54,8 @@ if __name__ == '__main__':
         if cfg['mc'][emission_type]['max_samples'] is not None:
             mc[emission_type].samples = mc[emission_type].samples[:cfg['mc'][emission_type]['max_samples']]
 
+    print(mc)
+
     search_radius = {
         emission_type: cfg['mc'][emission_type]['search_radius']
         for emission_type in mc
