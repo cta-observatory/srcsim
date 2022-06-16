@@ -27,25 +27,29 @@ def generator(config):
                 emission_type=scfg['emission_type'],
                 pos=SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
                 rad=scfg['spatial']['radius'],
-                dnde=specgen(scfg['spectral'])
+                dnde=specgen(scfg['spectral']),
+                name=scfg['name']
             )
         elif scfg['spatial']['type'] == 'gauss':
             src = GaussSource(
                 emission_type=scfg['emission_type'],
                 pos=SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
                 sigma=scfg['spatial']['sigma'],
-                dnde=specgen(scfg['spectral'])
+                dnde=specgen(scfg['spectral']),
+                name=scfg['name']
             )
         elif scfg['spatial']['type'] == 'iso':
             src = IsotropicSource(
                 emission_type=scfg['emission_type'],
                 pos=SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
-                dnde=specgen(scfg['spectral'])
+                dnde=specgen(scfg['spectral']),
+                name=scfg['name']
             )
         elif scfg['spatial']['type'] == 'fitscube':
             src = FitsCubeSource(
                 emission_type=scfg['emission_type'],
                 file_name=scfg['spatial']['file_name'],
+                name=scfg['name']
             )
         else:
             raise ValueError(f"Unknown source type '{scfg['type']}'")
@@ -70,8 +74,8 @@ class Source:
 
 
 class DiskSource(Source):
-    def __init__(self, emission_type, pos, rad, dnde):
-        super().__init__(emission_type, pos, dnde)
+    def __init__(self, emission_type, pos, rad, dnde, name='disk_source'):
+        super().__init__(emission_type, pos, dnde, name)
         self.rad = rad
 
     def __repr__(self):
@@ -94,8 +98,8 @@ f"""{type(self).__name__} instance
 
 
 class GaussSource(Source):
-    def __init__(self, emission_type, pos, sigma, dnde):
-        super().__init__(emission_type, pos, dnde)
+    def __init__(self, emission_type, pos, sigma, dnde, name='gauss_source'):
+        super().__init__(emission_type, pos, dnde, name)
         self.sigma = sigma
 
     def __repr__(self):
@@ -119,8 +123,8 @@ f"""{type(self).__name__} instance
 
 
 class IsotropicSource(Source):
-    def __init__(self, emission_type, pos, dnde):
-        super().__init__(emission_type, pos, dnde)
+    def __init__(self, emission_type, pos, dnde, name='iso_source'):
+        super().__init__(emission_type, pos, dnde, name)
 
     def __repr__(self):
         print(
@@ -138,11 +142,11 @@ f"""{type(self).__name__} instance
 
 
 class FitsCubeSource(Source):
-    def __init__(self, emission_type, file_name, name='source'):
+    def __init__(self, emission_type, file_name, name='fits_source'):
         cube, wcs = self.read_data(file_name)
 
         pos = wcs.pixel_to_world(0, 0, 0)[0]
-        super().__init__(emission_type, pos=pos, dnde=None)
+        super().__init__(emission_type, pos=pos, dnde=None, name=name)
 
         self.file_name = file_name
         self.cube = cube
