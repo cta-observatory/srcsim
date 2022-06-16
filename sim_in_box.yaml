@@ -24,6 +24,7 @@ rungen:
     time: 
         start: '2022-05-31'
         duration: '2 hr'
+        max_run_duration: '20 min'
         accuracy: '1 min'
     location:
         lon: '-17.890659 deg'

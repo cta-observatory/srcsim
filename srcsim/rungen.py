@@ -18,7 +18,33 @@ def get_trajectory(tel_pos, tstart, tstop, time_step, obsloc):
     return tel_altaz
 
 
-def get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step):
+def enforce_max_interval_length(tstarts, tstops, max_length):
+    tstarts_new = []
+    tstops_new = []
+
+    for tstart, tstop in zip(tstarts, tstops):
+        interval_duration = tstop - tstart
+
+        if interval_duration > max_length:
+            time_edges = Time(
+                np.arange(tstart.unix, tstop.unix, step=max_length.to('s').value),
+                format='unix'
+            )
+            if tstop not in time_edges:
+                time_edges = Time([time_edges, tstop])
+
+            for tmin, tmax in zip(time_edges[:-1], time_edges[1:]):
+                tstarts_new.append(tmin)
+                tstops_new.append(tmax)
+
+        else:
+            tstarts_new.append(tstart)
+            tstops_new.append(tstop)
+
+    return Time(tstarts_new), Time(tstops_new)
+
+
+def get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step, max_duration=None):
     in_box = (tel_altaz.az > azmin) & (tel_altaz.az <= azmax) & (tel_altaz.alt > altmin) & (tel_altaz.alt < altmax)
     nodes = np.where(np.diff(tel_altaz.obstime[in_box].unix) > time_step.to('s').value)[0]
     
@@ -33,6 +59,9 @@ def get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, time_step):
 
     tstarts = Time([tel_altaz.obstime[in_box][interval[0]] for interval in intervals])
     tstops = Time([tel_altaz.obstime[in_box][interval[1]] for interval in intervals])
+
+    if max_duration is not None:
+        tstarts, tstops = enforce_max_interval_length(tstarts, tstops, max_duration)
     
     return tstarts, tstops
 
@@ -59,16 +88,17 @@ class AltAzBoxGenerator:
         tstart = Time(cfg['time']['start'])
         duration = u.Quantity(cfg['time']['duration'])
         accuracy = u.Quantity(cfg['time']['accuracy'])
+        max_run_duration = u.Quantity(cfg['time']['max_run_duration']) if cfg['time']['max_run_duration'] is not None else None
         obsloc = EarthLocation(
             lat=u.Quantity(cfg['location']['lat']),
             lon=u.Quantity(cfg['location']['lon']),
             height=u.Quantity(cfg['location']['height']),
         )
 
-        return cls.get_runs(obsloc, tel_pos, duration, altmin, altmax, azmin, azmax, tstart, accuracy)
+        return cls.get_runs(obsloc, tel_pos, duration, altmin, altmax, azmin, azmax, tstart, accuracy, max_run_duration)
 
     @classmethod
-    def get_runs(cls, obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart=None, accuracy=1*u.minute):
+    def get_runs(cls, obsloc, tel_pos, tobs, altmin, altmax, azmin, azmax, tstart=None, accuracy=1*u.minute, max_run_duration=None):
         if tstart is None:
             tstart = Time('1970-01-01')
 
@@ -90,7 +120,7 @@ class AltAzBoxGenerator:
             obsloc=obsloc
         )
         
-        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
+        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy, max_run_duration)
         run_durations = tstops - tstarts
         
         nsequences = (tobs / np.sum(run_durations)).decompose()
@@ -106,7 +136,7 @@ class AltAzBoxGenerator:
                 time_step=accuracy,
                 obsloc=obsloc
             )
-            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
+            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy, max_run_duration)
             remaining_tobs = tobs - np.sum(tstops - tstarts)
         
             # Fourth pass - additional incomplete runs
@@ -117,7 +147,7 @@ class AltAzBoxGenerator:
                 time_step=accuracy,
                 obsloc=obsloc
             )
-            _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, accuracy)
+            _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, accuracy, max_run_duration)
             _tstops = Time(_tstarts + remaining_tobs / (len(_tstarts)))
 
             tstarts = Time([tstarts, _tstarts])
@@ -131,7 +161,7 @@ class AltAzBoxGenerator:
                 time_step=accuracy,
                 obsloc=obsloc
             )
-            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
+            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy, max_run_duration)
         
         runs = tuple(
             DataRun(tel_pos, tstart, tstop, obsloc, run_id)
