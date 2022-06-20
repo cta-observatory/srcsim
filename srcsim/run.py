@@ -120,7 +120,7 @@ f"""{type(self).__name__} instance
                 weights = (1 / nsamples * dt * expected_flux / model_flux).decompose()
 
                 n_mc_events = len(sample.evt_energy)
-                n_events = int(np.round(weights.sum()))
+                n_events = np.random.poisson(weights.sum())
                 p = weights / weights.sum()
                 idx = np.random.choice(
                     np.arange(n_mc_events),
