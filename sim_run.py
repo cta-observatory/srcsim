@@ -70,9 +70,11 @@ if __name__ == '__main__':
 
     info_message('Preparing sources')
     srcs = srcgen(cfg['sources'])
+    print(srcs)
 
     info_message('Preparing the data run')
     run = DataRun.from_config(cfg['run'])
+    print(run)
 
     info_message('Starting event sampling')
     evt = [
