@@ -209,3 +209,21 @@ f"""{type(self).__name__} instance
     def dndedo(self, energy, coord):
         x, y, z = self.wcs.world_to_pixel(coord, energy)
         return self.cube_value(x, y, z)
+
+
+class OffSource(Source):
+    def __init__(self, emission_type, name='off_source'):
+        super().__init__(emission_type, pos=None, dnde=None, name=name)
+
+    def __repr__(self):
+        print(
+f"""{type(self).__name__} instance
+    {'Name':.<20s}: {self.name}
+    {'Emission type':.<20s}: {self.emission_type}
+"""
+        )
+
+        return super().__repr__()
+
+    def dndedo(self, energy, coord):
+        return 1 / (1 * u.Unit('1/(s TeV sr)'))
