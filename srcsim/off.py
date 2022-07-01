@@ -45,6 +45,7 @@ class OffSample:
         )
         cam_x, cam_y = self.data_table[['reco_src_x', 'reco_src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle
         self.evt_coord = SkyCoord(cam_x, cam_y, frame=tel_pos.skyoffset_frame())
+        self.evt_energy = self.data_table['reco_energy'].to_numpy() * self.units['energy']
         
     def __repr__(self):
         print(
@@ -72,7 +73,9 @@ f"""{type(self).__name__} instance
         return t_elapsed
 
     def dndedo(self, energy, coord):
-        return 1 / (self.n_events / self.obs_duration * u.Unit('1/(s TeV sr)'))
+        dummy = 1 + 0 * energy.value
+        val = dummy * 1 / (1 / self.obs_duration * u.Unit('1/(s TeV sr)'))
+        return val
 
 
 class OffCollection:

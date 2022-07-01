@@ -226,4 +226,6 @@ f"""{type(self).__name__} instance
         return super().__repr__()
 
     def dndedo(self, energy, coord):
-        return 1 / (1 * u.Unit('1/(s TeV sr)'))
+        dummy = 1 + 0 * energy.value
+        val = dummy * 1 / (1 * u.Unit('1/(s TeV sr)'))
+        return val
