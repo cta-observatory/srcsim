@@ -55,6 +55,26 @@ f"""{type(self).__name__} instance
 
         return data_run
 
+    @classmethod
+    def update_time_delta(cls, events):
+        event_time = events['trigger_time'].to_numpy()
+        delta_time = np.zeros_like(event_time)
+
+        argsorted = event_time.argsort()
+        dt = np.diff(event_time[argsorted])
+        delta_time[argsorted[:-1]] = dt
+        delta_time[argsorted[-1]] = dt[-1]
+
+        events = events.drop(
+            columns=['delta_t'],
+            errors='ignore'
+        )
+        events = events.assign(
+            delta_t = delta_time,
+        )
+
+        return events
+
     def to_dict(self):
         data = {'id': self.id, 'pointing': {}, 'time': {}, 'location': {}}
 
@@ -131,8 +151,10 @@ f"""{type(self).__name__} instance
                 evt = sample.data_table.iloc[idx]
 
                 # Events arrival time
+                arrival_time = np.random.uniform(tstart.unix, (tstart+dt).unix, size=len(evt))
                 evt = evt.assign(
-                    dragon_time = np.linspace(tstart.unix, (tstart+dt).unix, num=len(evt))
+                    dragon_time = arrival_time,
+                    trigger_time = arrival_time,
                 )
 
                 # Telescope pointing
@@ -160,7 +182,9 @@ f"""{type(self).__name__} instance
                 )
 
                 events.append(evt)
-            
+
         events = pd.concat(events)
-        
+
+        events = self.update_time_delta(events)
+
         return events
