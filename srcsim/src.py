@@ -51,6 +51,11 @@ def generator(config):
                 file_name=scfg['spatial']['file_name'],
                 name=scfg['name']
             )
+        elif scfg['spatial']['type'] == 'off':
+            src = OffSource(
+                emission_type=scfg['emission_type'],
+                name=scfg['name']
+            )
         else:
             raise ValueError(f"Unknown source type '{scfg['type']}'")
 
