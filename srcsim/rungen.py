@@ -1,5 +1,8 @@
+import glob
 import yaml
+import functools
 import numpy as np
+import pandas as pd
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz, EarthLocation
@@ -201,3 +204,80 @@ class AltAzBoxGenerator:
             )
         
         return runs
+
+
+class DataMatchingGenerator:
+    @classmethod
+    def get_runs_from_config(cls, config):
+        if isinstance(config, str):
+            cfg = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
+        else:
+            cfg = config
+
+        obsloc = EarthLocation(
+            lat=u.Quantity(cfg['location']['lat']),
+            lon=u.Quantity(cfg['location']['lon']),
+            height=u.Quantity(cfg['location']['height']),
+        )
+
+        return cls.get_runs(cfg['file_mask'], obsloc)
+
+    @classmethod
+    def get_runs(cls, file_mask, obsloc):
+        file_list = glob.glob(file_mask)
+
+        runs_info = functools.reduce(
+            lambda container, file_name: container + cls.runs_info(file_name, obsloc),
+            file_list,
+            []
+        )
+
+        runs = [
+            DataRun(
+                run_info['tel_pos'],
+                run_info['tstart'],
+                run_info['tstop'],
+                obsloc,
+                run_info['obs_id'],
+            )
+            for run_info in runs_info
+        ]
+
+        return runs
+
+    @classmethod
+    def runs_info(cls, file_name, obsloc):
+        data = pd.read_hdf(file_name, "dl2/event/telescope/parameters/LST_LSTCam")
+        obs_ids = np.unique(data['obs_id'].to_numpy())
+
+        skip_step = 1000
+
+        run_info = []
+
+        for obs_id in obs_ids:
+            data_table = data.query(f'obs_id == {obs_id}')
+
+            obstime = Time(data_table['trigger_time'][::skip_step].to_numpy(), format='unix')
+            frame = AltAz(obstime=obstime, location=obsloc)
+
+            tel_pos = SkyCoord(
+                data_table['az_tel'][::skip_step].to_numpy(),
+                data_table['alt_tel'][::skip_step].to_numpy(),
+                unit='rad',
+                frame=frame
+            )
+
+            pos = SkyCoord(tel_pos.icrs.ra.mean(), tel_pos.icrs.dec.mean(), frame='icrs')
+
+            obstime = Time(data_table['trigger_time'].to_numpy(), format='unix')
+
+            run_info.append(
+                {
+                    'obs_id': obs_id,
+                    'tel_pos': pos,
+                    'tstart': obstime.min(),
+                    'tstop': obstime.max(),
+                }
+            )
+
+        return run_info
