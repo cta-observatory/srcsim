@@ -86,7 +86,9 @@ if __name__ == '__main__':
         for src in srcs
     ]
     events = pd.concat(evt)
-    
+
+    events = run.update_time_delta(events)
+
     events.to_hdf(cfg['io']['out'] + f'run{run.id}.h5', 'dl2/event/telescope/parameters/LST_LSTCam')
 
     info_message('Simulation complete')
