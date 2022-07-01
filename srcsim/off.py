@@ -43,7 +43,7 @@ class OffSample:
             unit=self.units['angle'],
             frame='altaz'
         )
-        cam_x, cam_y = self.data_table[['src_x', 'src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle
+        cam_x, cam_y = self.data_table[['reco_src_x', 'reco_src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle
         self.evt_coord = SkyCoord(cam_x, cam_y, frame=tel_pos.skyoffset_frame())
         
     def __repr__(self):
