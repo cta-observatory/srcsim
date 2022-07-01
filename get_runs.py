@@ -7,7 +7,7 @@ import progressbar
 
 from srcsim.mc import MCCollection
 from srcsim.src import generator as srcgen
-from srcsim.rungen import AltAzBoxGenerator
+from srcsim.rungen import generator as rungen
 
 
 def info_message(text):
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     cfg = yaml.load(open(args.config, "r"), Loader=yaml.FullLoader)
 
     info_message('Preparing data runs')
-    runs = AltAzBoxGenerator.get_runs_from_config(cfg['rungen'])
+    runs = rungen(cfg['rungen'])
 
     for run_id, run in enumerate(runs):
         output_name = cfg['io']['out'] + f'run{run_id}.yaml'
