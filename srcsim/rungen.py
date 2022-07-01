@@ -10,6 +10,24 @@ from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 from .run import DataRun
 
 
+def generator(config):
+    if isinstance(config, str):
+        cfg = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
+    else:
+        cfg = config
+
+    runs = []
+
+    if cfg['type'] == "altaz_box":
+        runs = AltAzBoxGenerator.get_runs_from_config(cfg)
+    elif cfg['type'] == "data_matching":
+        DataMatchingGenerator.get_runs_from_config(cfg)
+    else:
+        raise ValueError(f"Unknown run generator type '{cfg['type']}'")
+
+    return runs
+
+
 def get_trajectory(tel_pos, tstart, tstop, time_step, obsloc):
     times = Time(
         np.arange(tstart.unix, tstop.unix, step=time_step.to('s').value),
