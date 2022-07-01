@@ -11,6 +11,7 @@ mc:
         max_samples: 100
 
 rungen:
+    type: altaz_box
     pointing:
         ra: '83 deg'
         dec: '21 deg'
