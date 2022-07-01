@@ -41,7 +41,6 @@ def generator(config):
         elif scfg['spatial']['type'] == 'iso':
             src = IsotropicSource(
                 emission_type=scfg['emission_type'],
-                pos=SkyCoord(ra=scfg['spatial']['ra'], dec=scfg['spatial']['dec'], frame='icrs'),
                 dnde=specgen(scfg['spectral']),
                 name=scfg['name']
             )
@@ -128,15 +127,14 @@ f"""{type(self).__name__} instance
 
 
 class IsotropicSource(Source):
-    def __init__(self, emission_type, pos, dnde, name='iso_source'):
-        super().__init__(emission_type, pos, dnde, name)
+    def __init__(self, emission_type, dnde, name='iso_source'):
+        super().__init__(emission_type, pos=None, dnde=dnde, name=name)
 
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
     {'Name':.<20s}: {self.name}
     {'Emission type':.<20s}: {self.emission_type}
-    {'Position':.<20s}: {self.pos}
 """
         )
 
