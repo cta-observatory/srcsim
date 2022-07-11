@@ -159,14 +159,16 @@ f"""{type(self).__name__} instance
 
                 # Telescope pointing
                 evt = evt.drop(
-                    columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel'],
+                    columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
                     errors='ignore'
                 )
                 evt = evt.assign(
                     mc_az_tel = tel_pos.az.to('rad').value,
                     mc_alt_tel = tel_pos.alt.to('rad').value,
                     az_tel = tel_pos.az.to('rad').value,
-                    alt_tel = tel_pos.alt.to('rad').value
+                    alt_tel = tel_pos.alt.to('rad').value,
+                    ra_tel = self.tel_pos.icrs.ra.to('rad').value,
+                    dec_tel = self.tel_pos.icrs.dec.to('rad').value
                 )
 
                 # Reconstructed events coordinates
@@ -175,10 +177,12 @@ f"""{type(self).__name__} instance
                     evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
                     frame=offset_frame
                 )
-                evt = evt.drop(columns=['reco_az', 'reco_alt'], errors='ignore')
+                evt = evt.drop(columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'], errors='ignore')
                 evt = evt.assign(
                     reco_az = reco_coords.altaz.az.to('rad').value,
                     reco_alt = reco_coords.altaz.alt.to('rad').value,
+                    reco_ra = reco_coords.icrs.ra.to('rad').value,
+                    reco_dec = reco_coords.icrs.dec.to('rad').value,
                 )
 
                 events.append(evt)
