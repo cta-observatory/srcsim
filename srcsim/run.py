@@ -103,7 +103,10 @@ f"""{type(self).__name__} instance
             tdelta = [self.tstop - self.tstart]
         
         for tstart, dt in zip(tedges[:-1], tdelta):
-            frame = AltAz(obstime=tstart, location=self.obsloc)
+            frame = AltAz(
+                obstime=tstart + dt/2,
+                location=self.obsloc
+            )
             tel_pos = self.tel_pos.transform_to(frame)
         
             if tel_pos_tolerance is None:
