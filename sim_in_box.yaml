@@ -10,6 +10,9 @@ mc:
         search_radius: ['180 deg', '180 deg']
         max_samples: 100
 
+sampling:
+    time_step: '1 min'
+
 rungen:
     type: altaz_box
     pointing:

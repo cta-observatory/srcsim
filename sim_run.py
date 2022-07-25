@@ -67,6 +67,8 @@ if __name__ == '__main__':
                 search_radius[emission_type] = u.Quantity(search_radius[emission_type])
             else:
                 search_radius[emission_type] = [u.Quantity(s) for s in search_radius[emission_type]]
+                
+    cfg['sampling']['time_step'] = u.Quantity(cfg['sampling']['time_step'])
 
     info_message('Preparing sources')
     srcs = srcgen(cfg['sources'])
@@ -82,7 +84,7 @@ if __name__ == '__main__':
             mc,
             src,
             search_radius[src.emission_type],
-            cfg['run']['time']['accuracy']
+            cfg['sampling']['time_step']
         )
         for src in srcs
     ]
