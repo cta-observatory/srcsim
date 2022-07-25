@@ -81,7 +81,8 @@ if __name__ == '__main__':
         run.predict(
             mc,
             src,
-            search_radius[src.emission_type]
+            search_radius[src.emission_type],
+            cfg['run']['time']['accuracy']
         )
         for src in srcs
     ]
