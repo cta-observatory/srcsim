@@ -166,39 +166,68 @@ f"""{type(self).__name__} instance
                 arrival_time = arrival_time[idx]
                 current_tel_pos = current_tel_pos[idx]
 
-                # Events arrival time
-                evt = evt.assign(
-                    dragon_time = arrival_time,
-                    trigger_time = arrival_time,
+                # Dropping the columns we're going to (re-)fill
+                evt = evt.drop(
+                    columns=['dragon_time', 'trigger_time'],
+                    errors='ignore'
                 )
-
-                # Telescope pointing
                 evt = evt.drop(
                     columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
                     errors='ignore'
                 )
-                evt = evt.assign(
-                    mc_az_tel = current_tel_pos.az.to('rad').value,
-                    mc_alt_tel = current_tel_pos.alt.to('rad').value,
-                    az_tel = current_tel_pos.az.to('rad').value,
-                    alt_tel = current_tel_pos.alt.to('rad').value,
-                    ra_tel = self.tel_pos.icrs.ra.to('rad').value,
-                    dec_tel = self.tel_pos.icrs.dec.to('rad').value
+                evt = evt.drop(
+                    columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'],
+                    errors='ignore'
                 )
 
-                # Reconstructed events coordinates
-                reco_coords = SkyCoord(
-                    evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                    evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                    frame=offset_frame
-                )
-                evt = evt.drop(columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'], errors='ignore')
-                evt = evt.assign(
-                    reco_az = reco_coords.altaz.az.to('rad').value,
-                    reco_alt = reco_coords.altaz.alt.to('rad').value,
-                    reco_ra = reco_coords.icrs.ra.to('rad').value,
-                    reco_dec = reco_coords.icrs.dec.to('rad').value,
-                )
+                if n_events > 0:
+                    # Events arrival time
+                    evt = evt.assign(
+                        dragon_time = arrival_time,
+                        trigger_time = arrival_time,
+                    )
+
+                    # Telescope pointing
+                    evt = evt.assign(
+                        mc_az_tel = current_tel_pos.az.to('rad').value,
+                        mc_alt_tel = current_tel_pos.alt.to('rad').value,
+                        az_tel = current_tel_pos.az.to('rad').value,
+                        alt_tel = current_tel_pos.alt.to('rad').value,
+                        ra_tel = self.tel_pos.icrs.ra.to('rad').value,
+                        dec_tel = self.tel_pos.icrs.dec.to('rad').value
+                    )
+
+                    # Reconstructed events coordinates
+                    reco_coords = SkyCoord(
+                        evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                        evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                        frame=offset_frame
+                    )
+                    evt = evt.assign(
+                        reco_az = reco_coords.altaz.az.to('rad').value,
+                        reco_alt = reco_coords.altaz.alt.to('rad').value,
+                        reco_ra = reco_coords.icrs.ra.to('rad').value,
+                        reco_dec = reco_coords.icrs.dec.to('rad').value,
+                    )
+                else:
+                    evt = evt.assign(
+                        dragon_time = None,
+                        trigger_time = None,
+                    )
+                    evt = evt.assign(
+                        mc_az_tel = None,
+                        mc_alt_tel = None,
+                        az_tel = None,
+                        alt_tel = None,
+                        ra_tel = None,
+                        dec_tel = None
+                    )
+                    evt = evt.assign(
+                        reco_az = None,
+                        reco_alt = None,
+                        reco_ra = None,
+                        reco_dec = None
+                    )
 
                 events.append(evt)
 
