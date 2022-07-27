@@ -125,12 +125,22 @@ f"""{type(self).__name__} instance
             nsamples = len(mc.samples)
 
             for sample in mc.samples:
+                # Randomly distributing events within the time bin
+                arrival_time = np.random.uniform(tstart.unix, (tstart+dt).unix, size=len(sample.data_table))
+
+                # Recalculating telescope Alt/Az for the mock event arrival times
+                current_frame = AltAz(
+                    obstime=Time(arrival_time, format='unix'),
+                    location=self.obsloc
+                )
+                current_tel_pos = self.tel_pos.transform_to(current_frame)
+
                 # Astropy does not pass the location / time
                 # to the offset frame, need to do this manually
                 offset_frame = SkyOffsetFrame(
-                    origin=tel_pos.altaz.skyoffset_frame().origin,
-                    location=tel_pos.altaz.frame.location,
-                    obstime=tel_pos.altaz.frame.obstime
+                    origin=current_tel_pos.altaz.skyoffset_frame().origin,
+                    location=current_tel_pos.altaz.frame.location,
+                    obstime=current_tel_pos.altaz.frame.obstime
                 )
                 coords = SkyCoord(
                     sample.evt_coord.skyoffsetaltaz.lon,
@@ -152,9 +162,11 @@ f"""{type(self).__name__} instance
                 )
 
                 evt = sample.data_table.iloc[idx]
+                offset_frame = offset_frame[idx]
+                arrival_time = arrival_time[idx]
+                current_tel_pos = current_tel_pos[idx]
 
                 # Events arrival time
-                arrival_time = np.random.uniform(tstart.unix, (tstart+dt).unix, size=len(evt))
                 evt = evt.assign(
                     dragon_time = arrival_time,
                     trigger_time = arrival_time,
@@ -166,10 +178,10 @@ f"""{type(self).__name__} instance
                     errors='ignore'
                 )
                 evt = evt.assign(
-                    mc_az_tel = tel_pos.az.to('rad').value,
-                    mc_alt_tel = tel_pos.alt.to('rad').value,
-                    az_tel = tel_pos.az.to('rad').value,
-                    alt_tel = tel_pos.alt.to('rad').value,
+                    mc_az_tel = current_tel_pos.az.to('rad').value,
+                    mc_alt_tel = current_tel_pos.alt.to('rad').value,
+                    az_tel = current_tel_pos.az.to('rad').value,
+                    alt_tel = current_tel_pos.alt.to('rad').value,
                     ra_tel = self.tel_pos.icrs.ra.to('rad').value,
                     dec_tel = self.tel_pos.icrs.dec.to('rad').value
                 )
