@@ -26,7 +26,7 @@ def info_message(text):
 def main():
     arg_parser = argparse.ArgumentParser(
         description="""
-        LST event simulator.
+        LST simulated runs generator.
         """
     )
 
