@@ -93,10 +93,12 @@ f"""{type(self).__name__} instance
     def predict(self, mccollections, source, tel_pos_tolerance=None, time_step=1*u.minute):
         events = []
 
-        tedges = Time(
-            np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value),
-            format='unix'
-        )
+        unix_edges = np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value)
+        if unix_edges[-1] < self.tstop.unix:
+            unix_edges = np.concatenate((unix_edges, [self.tstop.unix]))
+
+        tedges = Time(unix_edges, format='unix')
+
         if len(tedges) > 1:
             tdelta = np.diff(tedges)
         else:
