@@ -34,6 +34,6 @@ classifiers = [
 "Homepage" = "https://gitlab.com/lageslise/source_simulator"
 "Bug Tracker" = "https://gitlab.com/lageslise/source_simulator/issues"
 
-[project.scripts]
-get_runs = scripts.get_runs.py:main
-sim_run = scripts.sim_runs.py:main
+#[project.scripts]
+#get_runs = scripts.get_runs.py:main
+#sim_run = scripts.sim_runs.py:main
