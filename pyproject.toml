@@ -2,16 +2,6 @@
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
-[install-system]
-requires = [
-    "astropy==5.1",
-    "numpy==1.21.0",
-    "pandas==1.4.1",
-    "scipy==1.5.0",
-    "tables==3.7.0",
-    "PyYAML==5.3.1"
-]
-
 [project]
 name = "srcsim"
 version = "1.0.0"
@@ -29,11 +19,19 @@ classifiers = [
     "License :: OSI Approved :: GNU GPLv3",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "astropy==5.1",
+    "numpy>=1.21.0",
+    "pandas==1.4.1",
+    "scipy>=1.5.0",
+    "tables==3.7.0",
+    "PyYAML==5.3.1"
+]
 
 [project.urls]
 "Homepage" = "https://gitlab.com/lageslise/source_simulator"
 "Bug Tracker" = "https://gitlab.com/lageslise/source_simulator/issues"
 
-#[project.scripts]
-#get_runs = scripts.get_runs.py:main
-#sim_run = scripts.sim_runs.py:main
+[project.scripts]
+getruns = "srcsim.scripts.get_runs:main"
+simrun = "srcsim.scripts.sim_run:main"

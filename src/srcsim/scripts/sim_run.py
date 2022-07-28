@@ -3,7 +3,6 @@ import datetime
 import argparse
 import pandas as pd
 import astropy.units as u
-import progressbar
 
 from srcsim.mc import MCCollection
 from srcsim.src import generator as srcgen
@@ -28,7 +27,7 @@ def info_message(text):
     print("{date:s}: {message:s}".format(date=date_str, message=text))
 
 
-if __name__ == '__main__':
+def main():
     arg_parser = argparse.ArgumentParser(
         description="""
         LST event simulator.
@@ -92,3 +91,7 @@ if __name__ == '__main__':
     events.to_hdf(cfg['io']['out'] + f'run{run.id}.h5', 'dl2/event/telescope/parameters/LST_LSTCam')
 
     info_message('Simulation complete')
+
+
+if __name__ == '__main__':
+    main()

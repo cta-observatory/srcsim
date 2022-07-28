@@ -1,12 +1,7 @@
 import yaml
 import datetime
 import argparse
-import pandas as pd
-import astropy.units as u
-import progressbar
 
-from srcsim.mc import MCCollection
-from srcsim.src import generator as srcgen
 from srcsim.rungen import generator as rungen
 
 
@@ -28,7 +23,7 @@ def info_message(text):
     print("{date:s}: {message:s}".format(date=date_str, message=text))
 
 
-if __name__ == '__main__':
+def main():
     arg_parser = argparse.ArgumentParser(
         description="""
         LST event simulator.
@@ -60,3 +55,7 @@ if __name__ == '__main__':
             yaml.dump(run_cfg, output)
 
     info_message('Generation complete')
+
+
+if __name__ == '__main__':
+    main()
