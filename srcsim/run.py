@@ -213,22 +213,22 @@ f"""{type(self).__name__} instance
                     )
                 else:
                     evt = evt.assign(
-                        dragon_time = None,
-                        trigger_time = None,
+                        dragon_time = np.zeros(0),
+                        trigger_time = np.zeros(0),
                     )
                     evt = evt.assign(
-                        mc_az_tel = None,
-                        mc_alt_tel = None,
-                        az_tel = None,
-                        alt_tel = None,
-                        ra_tel = None,
-                        dec_tel = None
+                        mc_az_tel = np.zeros(0),
+                        mc_alt_tel = np.zeros(0),
+                        az_tel = np.zeros(0),
+                        alt_tel = np.zeros(0),
+                        ra_tel = np.zeros(0),
+                        dec_tel = np.zeros(0)
                     )
                     evt = evt.assign(
-                        reco_az = None,
-                        reco_alt = None,
-                        reco_ra = None,
-                        reco_dec = None
+                        reco_az = np.zeros(0),
+                        reco_alt = np.zeros(0),
+                        reco_ra = np.zeros(0),
+                        reco_dec = np.zeros(0)
                     )
 
                 events.append(evt)
