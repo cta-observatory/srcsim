@@ -56,6 +56,13 @@ f"""{type(self).__name__} instance
         return data_run
 
     @classmethod
+    def time_sort(cls, events):
+        timestamp = np.array(events["trigger_time"])
+        sorting = np.argsort(timestamp)
+
+        return events.iloc[sorting]
+
+    @classmethod
     def update_time_delta(cls, events):
         event_time = events['trigger_time'].to_numpy()
         delta_time = np.zeros_like(event_time)

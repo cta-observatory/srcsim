@@ -90,6 +90,7 @@ if __name__ == '__main__':
     ]
     events = pd.concat(evt)
 
+    events = run.time_sort(events)
     events = run.update_time_delta(events)
 
     events.to_hdf(cfg['io']['out'] + f'run{run.id}.h5', 'dl2/event/telescope/parameters/LST_LSTCam')
