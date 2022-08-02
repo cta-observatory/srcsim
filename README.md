@@ -32,8 +32,5 @@ Contributions are welcome.
 ## Authors and acknowledgment
 Original developers are Ievgen Vovk, Marcel Strzys and Elise Lagarde.
 
-## License
-We're using GNU GPLv3 here.
-
 ## Project status
 Active development, so major changes are possible without a notice.
