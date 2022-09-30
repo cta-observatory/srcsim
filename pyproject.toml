@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "srcsim"
+version = "1.0.0"
+authors = [
+  { name="Ievgen Vovk", email="vovk@icrr.u-tokyo.ac.jp" },
+  { name="Marcel Strzys", email="strzys@icrr.u-tokyo.ac.jp" },
+  { name="Elise Lagarde", email="lageslise@gmail.com" },
+]
+description = "Source simulator for CTA/LST observations modelling"
+readme = "README.md"
+#license = { file="LICENSE" }
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: GNU GPLv3",
+    "Operating System :: OS Independent",
+]
+dependencies = [
+    "astropy==5.1",
+    "numpy>=1.21.0",
+    "pandas==1.4.1",
+    "scipy>=1.5.0",
+    "tables==3.7.0",
+    "PyYAML==5.3.1"
+]
+
+[project.urls]
+"Homepage" = "https://gitlab.com/lageslise/source_simulator"
+"Bug Tracker" = "https://gitlab.com/lageslise/source_simulator/issues"
+
+[project.scripts]
+getruns = "srcsim.scripts.get_runs:main"
+simrun = "srcsim.scripts.sim_run:main"
