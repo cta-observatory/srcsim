@@ -67,6 +67,8 @@ if __name__ == '__main__':
                 search_radius[emission_type] = u.Quantity(search_radius[emission_type])
             else:
                 search_radius[emission_type] = [u.Quantity(s) for s in search_radius[emission_type]]
+                
+    cfg['sampling']['time_step'] = u.Quantity(cfg['sampling']['time_step'])
 
     info_message('Preparing sources')
     srcs = srcgen(cfg['sources'])
@@ -81,12 +83,14 @@ if __name__ == '__main__':
         run.predict(
             mc,
             src,
-            search_radius[src.emission_type]
+            search_radius[src.emission_type],
+            cfg['sampling']['time_step']
         )
         for src in srcs
     ]
     events = pd.concat(evt)
 
+    events = run.time_sort(events)
     events = run.update_time_delta(events)
 
     events.to_hdf(cfg['io']['out'] + f'run{run.id}.h5', 'dl2/event/telescope/parameters/LST_LSTCam')

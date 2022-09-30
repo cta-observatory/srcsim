@@ -56,6 +56,13 @@ f"""{type(self).__name__} instance
         return data_run
 
     @classmethod
+    def time_sort(cls, events):
+        timestamp = np.array(events["trigger_time"])
+        sorting = np.argsort(timestamp)
+
+        return events.iloc[sorting]
+
+    @classmethod
     def update_time_delta(cls, events):
         event_time = events['trigger_time'].to_numpy()
         delta_time = np.zeros_like(event_time)
@@ -93,17 +100,22 @@ f"""{type(self).__name__} instance
     def predict(self, mccollections, source, tel_pos_tolerance=None, time_step=1*u.minute):
         events = []
 
-        tedges = Time(
-            np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value),
-            format='unix'
-        )
+        unix_edges = np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value)
+        if unix_edges[-1] < self.tstop.unix:
+            unix_edges = np.concatenate((unix_edges, [self.tstop.unix]))
+
+        tedges = Time(unix_edges, format='unix')
+
         if len(tedges) > 1:
             tdelta = np.diff(tedges)
         else:
             tdelta = [self.tstop - self.tstart]
         
         for tstart, dt in zip(tedges[:-1], tdelta):
-            frame = AltAz(obstime=tstart, location=self.obsloc)
+            frame = AltAz(
+                obstime=tstart + dt/2,
+                location=self.obsloc
+            )
             tel_pos = self.tel_pos.transform_to(frame)
         
             if tel_pos_tolerance is None:
@@ -122,12 +134,22 @@ f"""{type(self).__name__} instance
             nsamples = len(mc.samples)
 
             for sample in mc.samples:
+                # Randomly distributing events within the time bin
+                arrival_time = np.random.uniform(tstart.unix, (tstart+dt).unix, size=len(sample.data_table))
+
+                # Recalculating telescope Alt/Az for the mock event arrival times
+                current_frame = AltAz(
+                    obstime=Time(arrival_time, format='unix'),
+                    location=self.obsloc
+                )
+                current_tel_pos = self.tel_pos.transform_to(current_frame)
+
                 # Astropy does not pass the location / time
                 # to the offset frame, need to do this manually
                 offset_frame = SkyOffsetFrame(
-                    origin=tel_pos.altaz.skyoffset_frame().origin,
-                    location=tel_pos.altaz.frame.location,
-                    obstime=tel_pos.altaz.frame.obstime
+                    origin=current_tel_pos.altaz.skyoffset_frame().origin,
+                    location=current_tel_pos.altaz.frame.location,
+                    obstime=current_tel_pos.altaz.frame.obstime
                 )
                 coords = SkyCoord(
                     sample.evt_coord.skyoffsetaltaz.lon,
@@ -149,41 +171,72 @@ f"""{type(self).__name__} instance
                 )
 
                 evt = sample.data_table.iloc[idx]
+                offset_frame = offset_frame[idx]
+                arrival_time = arrival_time[idx]
+                current_tel_pos = current_tel_pos[idx]
 
-                # Events arrival time
-                arrival_time = np.random.uniform(tstart.unix, (tstart+dt).unix, size=len(evt))
-                evt = evt.assign(
-                    dragon_time = arrival_time,
-                    trigger_time = arrival_time,
+                # Dropping the columns we're going to (re-)fill
+                evt = evt.drop(
+                    columns=['dragon_time', 'trigger_time'],
+                    errors='ignore'
                 )
-
-                # Telescope pointing
                 evt = evt.drop(
                     columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
                     errors='ignore'
                 )
-                evt = evt.assign(
-                    mc_az_tel = tel_pos.az.to('rad').value,
-                    mc_alt_tel = tel_pos.alt.to('rad').value,
-                    az_tel = tel_pos.az.to('rad').value,
-                    alt_tel = tel_pos.alt.to('rad').value,
-                    ra_tel = self.tel_pos.icrs.ra.to('rad').value,
-                    dec_tel = self.tel_pos.icrs.dec.to('rad').value
+                evt = evt.drop(
+                    columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'],
+                    errors='ignore'
                 )
 
-                # Reconstructed events coordinates
-                reco_coords = SkyCoord(
-                    evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                    evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                    frame=offset_frame
-                )
-                evt = evt.drop(columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'], errors='ignore')
-                evt = evt.assign(
-                    reco_az = reco_coords.altaz.az.to('rad').value,
-                    reco_alt = reco_coords.altaz.alt.to('rad').value,
-                    reco_ra = reco_coords.icrs.ra.to('rad').value,
-                    reco_dec = reco_coords.icrs.dec.to('rad').value,
-                )
+                if n_events > 0:
+                    # Events arrival time
+                    evt = evt.assign(
+                        dragon_time = arrival_time,
+                        trigger_time = arrival_time,
+                    )
+
+                    # Telescope pointing
+                    evt = evt.assign(
+                        mc_az_tel = current_tel_pos.az.to('rad').value,
+                        mc_alt_tel = current_tel_pos.alt.to('rad').value,
+                        az_tel = current_tel_pos.az.to('rad').value,
+                        alt_tel = current_tel_pos.alt.to('rad').value,
+                        ra_tel = self.tel_pos.icrs.ra.to('rad').value,
+                        dec_tel = self.tel_pos.icrs.dec.to('rad').value
+                    )
+
+                    # Reconstructed events coordinates
+                    reco_coords = SkyCoord(
+                        evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                        evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                        frame=offset_frame
+                    )
+                    evt = evt.assign(
+                        reco_az = reco_coords.altaz.az.to('rad').value,
+                        reco_alt = reco_coords.altaz.alt.to('rad').value,
+                        reco_ra = reco_coords.icrs.ra.to('rad').value,
+                        reco_dec = reco_coords.icrs.dec.to('rad').value,
+                    )
+                else:
+                    evt = evt.assign(
+                        dragon_time = np.zeros(0),
+                        trigger_time = np.zeros(0),
+                    )
+                    evt = evt.assign(
+                        mc_az_tel = np.zeros(0),
+                        mc_alt_tel = np.zeros(0),
+                        az_tel = np.zeros(0),
+                        alt_tel = np.zeros(0),
+                        ra_tel = np.zeros(0),
+                        dec_tel = np.zeros(0)
+                    )
+                    evt = evt.assign(
+                        reco_az = np.zeros(0),
+                        reco_alt = np.zeros(0),
+                        reco_ra = np.zeros(0),
+                        reco_dec = np.zeros(0)
+                    )
 
                 events.append(evt)
 

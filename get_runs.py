@@ -52,6 +52,7 @@ if __name__ == '__main__':
         run_cfg = dict(
             io = cfg['io'],
             mc = cfg['mc'],
+            sampling = cfg['sampling'],
             sources = cfg['sources'],
             run = run.to_dict()
         )
