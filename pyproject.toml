@@ -29,8 +29,8 @@ dependencies = [
 ]
 
 [project.urls]
-"Homepage" = "https://gitlab.com/lageslise/source_simulator"
-"Bug Tracker" = "https://gitlab.com/lageslise/source_simulator/issues"
+"Homepage" = "https://github.com/cta-observatory/srcsim"
+"Bug Tracker" = "https://github.com/cta-observatory/srcsim/issues"
 
 [project.scripts]
 getruns = "srcsim.scripts.get_runs:main"
