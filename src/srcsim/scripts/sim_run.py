@@ -1,6 +1,7 @@
 import yaml
 import datetime
 import argparse
+import random
 import pandas as pd
 import astropy.units as u
 
@@ -51,7 +52,12 @@ def main():
 
     for emission_type in mc:
         if cfg['mc'][emission_type]['max_samples'] is not None:
-            mc[emission_type].samples = mc[emission_type].samples[:cfg['mc'][emission_type]['max_samples']]
+            mc[emission_type].samples = tuple(
+                random.sample(
+                    mc[emission_type].samples,
+                    cfg['mc'][emission_type]['max_samples']
+                )
+            )
 
     print(mc)
 
