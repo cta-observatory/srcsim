@@ -67,10 +67,11 @@ f"""{type(self).__name__} instance
         event_time = events['trigger_time'].to_numpy()
         delta_time = np.zeros_like(event_time)
 
-        argsorted = event_time.argsort()
-        dt = np.diff(event_time[argsorted])
-        delta_time[argsorted[:-1]] = dt
-        delta_time[argsorted[-1]] = dt[-1]
+        if len(event_time) > 0:
+            argsorted = event_time.argsort()
+            dt = np.diff(event_time[argsorted])
+            delta_time[argsorted[:-1]] = dt
+            delta_time[argsorted[-1]] = dt[-1]
 
         events = events.drop(
             columns=['delta_t'],
