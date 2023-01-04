@@ -53,6 +53,15 @@ class MCSample:
         self.evt_coord = SkyCoord(cam_x, cam_y, frame=self.tel_pos.skyoffset_frame())
 
         self.evt_energy = self.data_table['mc_energy'].to_numpy() * self.units['energy']
+
+        # Filtering out events with excessive offsets (e.g. due to the simulation numerical accuracy)
+        offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0] * self.units['viewcone']
+        evt_offset = self.evt_coord.separation(self.tel_pos)
+
+        in_fov = (evt_offset >= offset_min) & (evt_offset <= offset_max)
+        self.data_table = self.data_table[in_fov]
+        self.evt_coord = self.evt_coord[in_fov]
+        self.evt_energy = self.evt_energy[in_fov]
         
     def __repr__(self):
         print(
