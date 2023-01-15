@@ -240,7 +240,7 @@ f"""{type(self).__name__} instance
                     )
 
                 evt = evt.drop('mc_src_name', errors='ignore')
-                evt.assign(
+                evt = evt.assign(
                     mc_src_name = np.repeat(source.name, len(evt))
                 )
 
