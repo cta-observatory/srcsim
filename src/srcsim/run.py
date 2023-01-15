@@ -239,6 +239,11 @@ f"""{type(self).__name__} instance
                         reco_dec = np.zeros(0)
                     )
 
+                evt = evt.drop('mc_src_name', errors='ignore')
+                evt = evt.assign(
+                    mc_src_name = np.repeat(source.name, len(evt))
+                )
+
                 events.append(evt)
 
         events = pd.concat(events)
