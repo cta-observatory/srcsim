@@ -7,6 +7,8 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class EventSample:
+    reco_src_x: u.Quantity
+    reco_src_y: u.Quantity
     reco_alt: u.Quantity
     reco_az: u.Quantity
     reco_ra: u.Quantity
@@ -65,6 +67,7 @@ f"""{type(self).__name__} instance
 
     @classmethod
     def from_file(cls, file_name):
+        cam2angle = 1.5 / 450 *u.Unit('deg/mm')
         north_offset = 7
 
         event_data = dict()
@@ -83,6 +86,8 @@ f"""{type(self).__name__} instance
             'MRawEvtHeader_1.fDAQEvtNumber',
             'MSrcPosCam_1.fX',
             'MSrcPosCam_1.fY',
+            'MStereoParDisp.fDirectionX',
+            'MStereoParDisp.fDirectionY',
             'MStereoParDisp.fDirectionRA',
             'MStereoParDisp.fDirectionDec',
             'MStereoParDisp.fDirectionAz',
@@ -108,6 +113,8 @@ f"""{type(self).__name__} instance
             'MPointingPos_1.fDec': 'dec_tel',
             'MSrcPosCam_1.fX': 'src_x',
             'MSrcPosCam_1.fY': 'src_y',
+            'MStereoParDisp.fDirectionX': 'reco_src_x',
+            'MStereoParDisp.fDirectionY': 'reco_src_y',
             'MStereoParDisp.fDirectionRA': 'reco_ra',
             'MStereoParDisp.fDirectionDec': 'reco_dec',
             'MStereoParDisp.fDirectionAz': 'reco_az',
@@ -123,6 +130,8 @@ f"""{type(self).__name__} instance
             'delta_t': u.s,
             'src_x': u.mm,
             'src_y': u.mm,
+            'reco_src_x': u.deg,
+            'reco_src_y': u.deg,
             'reco_alt': u.deg,
             'reco_az': u.deg,
             'reco_zd': u.deg,
@@ -186,6 +195,9 @@ f"""{type(self).__name__} instance
         event_data['alt_tel'] = 90 - event_data['zd_tel']
         event_data['reco_alt'] = 90 - event_data['reco_zd']
         event_data['gammaness'] = 1 - event_data['hadronness']
+
+        event_data['reco_src_x'] = event_data['reco_src_x'] / cam2angle
+        event_data['reco_src_y'] = event_data['reco_src_y'] / cam2angle
         
         for key in event_data:
             event_data[key] = event_data[key].to_numpy()
@@ -198,6 +210,8 @@ f"""{type(self).__name__} instance
 
         if is_mc:
             events = MagicStereoEvents(
+                reco_src_x = event_data['reco_src_x'],
+                reco_src_y = event_data['reco_src_y'],
                 reco_alt = event_data['reco_alt'],
                 reco_az = event_data['reco_az'],
                 reco_ra = event_data['reco_ra'],
@@ -218,6 +232,8 @@ f"""{type(self).__name__} instance
             )
         else:
             events = MagicStereoEvents(
+                reco_src_x = event_data['reco_src_x'],
+                reco_src_y = event_data['reco_src_y'],
                 reco_alt = event_data['reco_alt'],
                 reco_az = event_data['reco_az'],
                 reco_ra = event_data['reco_ra'],
