@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class EventSample:
+    obs_id: u.Quantity
     event_id: u.Quantity
     reco_src_x: u.Quantity
     reco_src_y: u.Quantity
@@ -130,6 +131,7 @@ f"""{type(self).__name__} instance
         }
         
         data_units = {
+            'run_number': u.one,
             'daq_event_number': u.one,
             'delta_t': u.s,
             'src_x': u.mm,
@@ -190,6 +192,13 @@ f"""{type(self).__name__} instance
 
                     event_data['mjd'] = mjd + (millisec / 1e3 + nanosec / 1e9) / 86400.0
 
+                event_data['run_number'] = numpy.repeat(
+                    int(
+                        input_file['RunHeaders']['MRawRunHeader_1./MRawRunHeader_1.fRunNumber'].array()[0]
+                    ),
+                    len(event_data['alt_tel'])
+                )
+
             else:
                 # The file is likely corrupted, so return empty arrays
                 for key in names_mapping:
@@ -215,6 +224,7 @@ f"""{type(self).__name__} instance
 
         if is_mc:
             events = MagicStereoEvents(
+                obs_id = event_data['run_number'],
                 event_id = event_data['daq_event_number'],
                 reco_src_x = event_data['reco_src_x'],
                 reco_src_y = event_data['reco_src_y'],
@@ -240,6 +250,7 @@ f"""{type(self).__name__} instance
             )
         else:
             events = MagicStereoEvents(
+                obs_id = event_data['run_number'],
                 reco_src_x = event_data['reco_src_x'],
                 reco_src_y = event_data['reco_src_y'],
                 reco_alt = event_data['reco_alt'],
@@ -264,6 +275,7 @@ f"""{type(self).__name__} instance
     def to_df(self):
         units = dict(
             # delta_t = u.s,
+            obs_id = u.one,
             event_id = u.one,
             src_x = u.m,
             src_y = u.m,
