@@ -35,3 +35,4 @@ dependencies = [
 [project.scripts]
 getruns = "srcsim.scripts.get_runs:main"
 simrun = "srcsim.scripts.sim_run:main"
+magic_to_dl2 = "srcsim.scripts.magic_to_dl2:main"
