@@ -195,9 +195,6 @@ f"""{type(self).__name__} instance
         event_data['alt_tel'] = 90 - event_data['zd_tel']
         event_data['reco_alt'] = 90 - event_data['reco_zd']
         event_data['gammaness'] = 1 - event_data['hadronness']
-
-        event_data['reco_src_x'] = event_data['reco_src_x'] / cam2angle
-        event_data['reco_src_y'] = event_data['reco_src_y'] / cam2angle
         
         for key in event_data:
             event_data[key] = event_data[key].to_numpy()
@@ -205,6 +202,9 @@ f"""{type(self).__name__} instance
         for key in event_data:
             if key in data_units:
                 event_data[key] = event_data[key] * data_units[key]
+
+        event_data['reco_src_x'] /= cam2angle
+        event_data['reco_src_y'] /= cam2angle
 
         is_mc = 'mc_energy' in event_data
 
