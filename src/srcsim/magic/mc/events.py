@@ -27,6 +27,17 @@ class EventSample:
 
 
 @dataclass(frozen=True)
+class McOrigEventSample:
+    az_tel: u.Quantity
+    alt_tel: u.Quantity
+    energy: u.Quantity
+    src_x: u.Quantity = u.Quantity([], unit='m')
+    src_y: u.Quantity = u.Quantity([], unit='m')
+    alt: u.Quantity = u.Quantity([], unit='deg')
+    az: u.Quantity = u.Quantity([], unit='deg')
+
+
+@dataclass(frozen=True)
 class MagicStereoEvents(EventSample):
     file_name: str = ''
 
@@ -251,3 +262,77 @@ f"""{type(self).__name__} instance
             if len(self.__getattribute__(key))
         }
         return pandas.DataFrame(data=data)
+
+
+@dataclass(frozen=True)
+class MagicMcOrigEvents(McOrigEventSample):
+    file_name: str = ''
+
+    def __str__(self) -> str:
+        summary = \
+f"""{type(self).__name__} instance
+    {'File name':.<20s}: {self.file_name}
+    {'Events':.<20s}: {self.n_events}
+"""
+        return summary
+
+    def __repr__(self):
+        print(str(self))
+
+        return super().__repr__()
+
+    @property
+    def n_events(self):
+        return len(self.az_tel)
+
+    @classmethod
+    def from_file(cls, file_name):
+        north_offset = 7 * u.deg
+
+        data_array_list = [
+            'MMcEvtBasic_1.fEnergy',
+            'MMcEvtBasic_1.fTelescopePhi',
+            'MMcEvtBasic_1.fTelescopeTheta',
+            'MSrcPosCam_1.fX',
+            'MSrcPosCam_1.fY',
+        ]
+
+        data_units = {
+            'MMcEvtBasic_1.fEnergy': u.GeV,
+            'MSrcPosCam_1.fX': u.mm,
+            'MSrcPosCam_1.fY': u.mm,
+            'MMcEvtBasic_1.fTelescopePhi': u.rad,
+            'MMcEvtBasic_1.fTelescopeTheta': u.rad,
+        }
+
+        with uproot.open(file_name) as input_file:
+            if 'OriginalMC' in input_file:
+                data = input_file['OriginalMC'].arrays(data_array_list)
+            else:
+                # The file is likely corrupted, so return empty arrays
+                data = {
+                    key: numpy.zeros(0)
+                    for key in data_array_list
+                }
+
+        event_data = {
+            key: data[key].to_numpy() * data_units[key]
+            for key in data.fields
+        }
+
+        event_data['MMcEvtBasic_1.fTelescopeAlt'] = numpy.pi/2 * u.rad - event_data['MMcEvtBasic_1.fTelescopeTheta']
+        # Transformation from Monte Carlo to usual azimuth
+        data['MMcEvtBasic_1.fTelescopePhi'] = -1 * (
+            data['MMcEvtBasic_1.fTelescopePhi'] - (180 * u.deg + north_offset).to(data_units['MMcEvtBasic_1.fTelescopePhi'])
+        )
+
+        events = MagicMcOrigEvents(
+            az_tel = event_data['MMcEvtBasic_1.fTelescopePhi'],
+            alt_tel = event_data['MMcEvtBasic_1.fTelescopeAlt'],
+            energy = event_data['MMcEvtBasic_1.fEnergy'],
+            src_x = event_data['MSrcPosCam_1.fX'],
+            src_y = event_data['MSrcPosCam_1.fY'],
+            file_name = file_name
+        )
+
+        return events

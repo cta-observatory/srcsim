@@ -1,2 +1,2 @@
 from .info import MagicMcInfo
-from .events import MagicStereoEvents
+from .events import MagicStereoEvents, MagicMcOrigEvents
