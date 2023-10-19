@@ -251,6 +251,7 @@ f"""{type(self).__name__} instance
         else:
             events = MagicStereoEvents(
                 obs_id = event_data['run_number'],
+                event_id = event_data['daq_event_number'],
                 reco_src_x = event_data['reco_src_x'],
                 reco_src_y = event_data['reco_src_y'],
                 reco_alt = event_data['reco_alt'],
