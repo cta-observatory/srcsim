@@ -151,6 +151,7 @@ f"""{type(self).__name__} instance
             'mc_alt':u.deg,
             'mc_az':u.deg,
             'mc_zd':u.deg,
+            'mc_energy': u.GeV,
         }
 
         with uproot.open(file_name) as input_file:
@@ -277,6 +278,7 @@ f"""{type(self).__name__} instance
             dec_tel =u.rad,
             mc_alt =u.rad,
             mc_az = u.rad,
+            mc_energy = u.TeV,
             mc_alt_tel = u.rad,
             mc_az_tel = u.rad,
         )
