@@ -42,7 +42,7 @@ class MCSample:
         self.tel_pos = SkyCoord(pointing_data['mc_az_tel'], pointing_data['mc_alt_tel'], unit=self.units['angle'], frame='altaz')
         
         # Working out the simulation spectrum
-        rmin, rmax = self.config_table[['min_scatter_range', 'max_scatter_range']].iloc[0] * self.units['distance']
+        rmin, rmax = self.config_table[['min_scatter_range', 'max_scatter_range']].iloc[0].tolist() * self.units['distance']
         ground_area = np.pi * (rmax**2 - rmin**2)
         nevents = self.config_table['num_showers'].iloc[0] * self.config_table['shower_reuse'].iloc[0]
         emin = self.config_table['energy_range_min'].iloc[0] * self.units['energy']
