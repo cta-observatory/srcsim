@@ -1,5 +1,6 @@
 import numpy
 import healpy
+import astropy.units as u
 from dataclasses import dataclass
 
 from .info import MagicMcInfo
