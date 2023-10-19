@@ -13,6 +13,21 @@ class MagicMcFile:
     events_triggered: MagicStereoEvents
     events_simulated: MagicMcOrigEvents
 
+    def __str__(self) -> str:
+        summary = \
+f"""{type(self).__name__} instance
+    {'File name':.<20s}: {self.file_name}
+    {'Simulated events':.<20s}: {self.events_simulated.n_events}
+    {'Triggered events':.<20s}: {self.events_triggered.n_events}
+    {'Energy range':.<20s}: {self.meta.energy_range_min} - {self.meta.energy_range_max}
+    {'Spectral index':.<20s}: {self.meta.spectral_index}
+    {'Scatter range':.<20s}: {self.meta.min_scatter_range} - {self.meta.max_scatter_range}
+    {'Viewcone':.<20s}: {self.meta.min_viewcone_radius} - {self.meta.max_viewcone_radius}
+    {'Telescope azimuth':.<20s}: {self.events_simulated.az_tel.to('deg').min()} - {self.events_simulated.az_tel.to('deg').max()}
+    {'Telescope altitude':.<20s}: {self.events_simulated.alt_tel.to('deg').min()} - {self.events_simulated.alt_tel.to('deg').max()}
+"""
+        return summary
+
     @classmethod
     def from_file(cls, file_name):
         self = MagicMcFile(
