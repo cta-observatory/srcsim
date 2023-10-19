@@ -71,6 +71,7 @@ f"""{type(self).__name__} instance
         for pix_id in range(npix):
             n_simulated = u.one * numpy.sum(pix_ids_simulated == pix_id)
             meta = MagicMcInfo(
+                obs_id = self.meta.obs_id,
                 num_showers = n_simulated,
                 energy_range_min = self.meta.energy_range_min,
                 energy_range_max = self.meta.energy_range_max,
@@ -95,6 +96,10 @@ f"""{type(self).__name__} instance
             data = self.events_triggered
             selection = pix_ids_triggered == pix_id
             events_triggered = MagicStereoEvents(
+                obs_id = data.obs_id[selection],
+                event_id = data.event_id[selection],
+                reco_src_x = data.reco_src_x[selection],
+                reco_src_y = data.reco_src_y[selection],
                 reco_alt = data.reco_alt[selection],
                 reco_az = data.reco_az[selection],
                 reco_ra = data.reco_ra[selection],
