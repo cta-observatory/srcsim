@@ -1,6 +1,7 @@
 import argparse
 import logging
 import healpy
+import numpy
 
 from srcsim.magic.mc import MagicMcFile
 
@@ -65,6 +66,10 @@ def main():
             )
         
         log.info('running HEALPix spliting')
+        log.info(
+            f'approximate pixel resolution: {numpy.degrees(healpy.nside2resol(args.nside)):.1f} deg' \
+            f' (nside={args.nside})'
+        )
         files = mcfile.healpy_split(args.nside)
 
         npix = healpy.nside2npix(args.nside)
