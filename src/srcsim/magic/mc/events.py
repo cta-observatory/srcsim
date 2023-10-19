@@ -192,18 +192,14 @@ f"""{type(self).__name__} instance
 
                     event_data['mjd'] = mjd + (millisec / 1e3 + nanosec / 1e9) / 86400.0
 
-                event_data['run_number'] = numpy.repeat(
-                    int(
-                        input_file['RunHeaders']['MRawRunHeader_1./MRawRunHeader_1.fRunNumber'].array()[0]
-                    ),
-                    len(event_data['alt_tel'])
-                )
+                run_number = input_file['RunHeaders']['MRawRunHeader_1./MRawRunHeader_1.fRunNumber'].array()[0]
 
             else:
                 # The file is likely corrupted, so return empty arrays
                 for key in names_mapping:
                     name = names_mapping[key]
                     event_data[name] = numpy.zeros(0)
+                run_number = 0
                     
         event_data['mc_alt'] = 90 - event_data['mc_zd']
         event_data['alt_tel'] = 90 - event_data['zd_tel']
@@ -212,7 +208,9 @@ f"""{type(self).__name__} instance
         
         for key in event_data:
             event_data[key] = event_data[key].to_numpy()
-            
+
+        event_data['run_number'] = numpy.repeat(run_number, len(event_data['az_tel']))
+
         for key in event_data:
             if key in data_units:
                 event_data[key] = event_data[key] * data_units[key]
