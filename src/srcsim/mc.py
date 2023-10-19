@@ -55,7 +55,7 @@ class MCSample:
         self.evt_energy = self.data_table['mc_energy'].to_numpy() * self.units['energy']
 
         # Filtering out events with excessive offsets (e.g. due to the simulation numerical accuracy)
-        offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0] * self.units['viewcone']
+        offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0].tolist() * self.units['viewcone']
         evt_offset = self.evt_coord.separation(self.tel_pos)
 
         in_fov = (evt_offset >= offset_min) & (evt_offset <= offset_max)
@@ -128,7 +128,7 @@ f"""{type(self).__name__} instance
         return power_law(energy, **self.spec_data)
     
     def dndo(self, coord):
-        offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0] * self.units['viewcone']
+        offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0].tolist() * self.units['viewcone']
         sky_area = 2 * np.pi * (np.cos(offset_min) - np.cos(offset_max)) * u.sr
         norm = 1 / sky_area
 
