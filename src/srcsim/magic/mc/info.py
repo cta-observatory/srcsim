@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class McInfo:
+    run_number: u.Quantity
     num_showers: u.Quantity
     energy_range_min: u.Quantity
     energy_range_max: u.Quantity
@@ -41,6 +42,9 @@ f"""{type(self).__name__} instance
     def from_file(cls, file_name):
         meta = dict()
         with uproot.open(file_name) as input_file:
+            meta['run_number'] = u.one * int(
+                input_file['RunHeaders']['MMcRunHeader_1./MMcRunHeader_1.fMcRunNumber'].array()[0]
+            )
             meta['num_showers'] = u.one * int(
                 input_file['RunHeaders']['MMcRunHeader_1./MMcRunHeader_1.fNumSimulatedShowers'].array()[0]
             )
@@ -53,6 +57,7 @@ f"""{type(self).__name__} instance
             meta['min_viewcone_radius'] = u.deg * 0
 
         info = MagicMcInfo(
+            run_number = meta['run_number'],
             num_showers = meta['num_showers'],
             energy_range_min = meta['energy_range_min'],
             energy_range_max = meta['energy_range_max'],
