@@ -26,6 +26,8 @@ class EventSample:
     mc_alt: u.Quantity = u.Quantity([], unit='deg')
     mc_az: u.Quantity = u.Quantity([], unit='deg')
     mc_energy: u.Quantity = u.Quantity([], unit='TeV')
+    mc_alt_tel: u.Quantity = u.Quantity([], unit='deg')
+    mc_az_tel: u.Quantity = u.Quantity([], unit='deg')
 
 
 @dataclass(frozen=True)
@@ -228,6 +230,8 @@ f"""{type(self).__name__} instance
                 mc_alt = event_data['mc_alt'],
                 mc_az = event_data['mc_az'],
                 mc_energy = event_data['mc_energy'],
+                mc_alt_tel = event_data['alt_tel'],
+                mc_az_tel = event_data['az_tel'],
                 file_name = file_name
             )
         else:
