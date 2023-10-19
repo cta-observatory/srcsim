@@ -262,6 +262,8 @@ f"""{type(self).__name__} instance
             # delta_t = u.s,
             src_x = u.mm,
             src_y = u.mm,
+            reco_src_x = u.mm,
+            reco_src_y = u.mm,
             reco_alt = u.deg,
             reco_az = u.deg,
             reco_ra = u.deg,
@@ -275,6 +277,8 @@ f"""{type(self).__name__} instance
             dec_tel =u.deg,
             mc_alt =u.deg,
             mc_az =u.deg,
+            mc_alt_tel = u.deg,
+            mc_az_tel = u.deg,
         )
         data = {
             key: self.__getattribute__(key).to(units[key]).value
