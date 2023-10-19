@@ -68,7 +68,7 @@ f"""{type(self).__name__} instance
         files = []
 
         for pix_id in range(npix):
-            n_simulated = numpy.sum(pix_ids_simulated == pix_id)
+            n_simulated = u.one * numpy.sum(pix_ids_simulated == pix_id)
             meta = MagicMcInfo(
                 num_showers = n_simulated,
                 energy_range_min = self.meta.energy_range_min,
