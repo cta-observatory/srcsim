@@ -117,6 +117,8 @@ f"""{type(self).__name__} instance
                 mc_alt = data.mc_alt[selection] if len(data.mc_alt) else data.mc_alt,
                 mc_az = data.mc_az[selection] if len(data.mc_az) else data.mc_az,
                 mc_energy = data.mc_energy[selection] if len(data.mc_energy) else data.mc_energy,
+                mc_alt_tel = data.mc_alt_tel[selection] if len(data.mc_alt_tel) else data.mc_alt_tel,
+                mc_az_tel = data.mc_az_tel[selection] if len(data.mc_az_tel) else data.mc_az_tel,
                 file_name = self.events_triggered.file_name
             )
 
