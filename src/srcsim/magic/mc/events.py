@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class EventSample:
+    event_id: u.Quantity
     reco_src_x: u.Quantity
     reco_src_y: u.Quantity
     reco_alt: u.Quantity
@@ -129,6 +130,7 @@ f"""{type(self).__name__} instance
         }
         
         data_units = {
+            'daq_event_number': u.one,
             'delta_t': u.s,
             'src_x': u.mm,
             'src_y': u.mm,
@@ -213,6 +215,7 @@ f"""{type(self).__name__} instance
 
         if is_mc:
             events = MagicStereoEvents(
+                event_id = event_data['daq_event_number'],
                 reco_src_x = event_data['reco_src_x'],
                 reco_src_y = event_data['reco_src_y'],
                 reco_alt = event_data['reco_alt'],
@@ -261,6 +264,7 @@ f"""{type(self).__name__} instance
     def to_df(self):
         units = dict(
             # delta_t = u.s,
+            event_id = u.one,
             src_x = u.m,
             src_y = u.m,
             reco_src_x = u.m,
