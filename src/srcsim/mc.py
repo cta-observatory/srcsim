@@ -11,6 +11,12 @@ def power_law(e, e0, norm, index):
 
 
 class MCSample:
+    # Effective focal lengths
+    camscale = {
+        1: 1 / 29.30565 * u.Unit('rad/m'),
+        5: 1 / 18.2121 * u.Unit('rad/m'),
+    }
+
     def __init__(self, file_name=None, obs_id=None, data_table=None, config_table=None):
         self.units = dict(
             energy = u.TeV,
@@ -18,10 +24,6 @@ class MCSample:
             distance = u.m,
             viewcone = u.deg
         )
-        
-        # TODO: refine this value
-        lst_focal_length = 28.01 * u.m
-        self.cam2angle = 1 * u.rad / lst_focal_length
 
         # TODO: refine the logic below / implement nicer
         if data_table is not None and config_table is not None:
@@ -49,7 +51,7 @@ class MCSample:
         self.spec_data = self.get_spec_data(nevents, emin, emax, index)
         self.spec_data['norm'] /= ground_area
 
-        cam_x, cam_y = self.data_table[['src_x', 'src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle
+        cam_x, cam_y = self.data_table[['src_x', 'src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle(self.data_table['tel_id'].tolist())
         self.evt_coord = SkyCoord(cam_x, cam_y, frame=self.tel_pos.skyoffset_frame())
 
         self.evt_energy = self.data_table['mc_energy'].to_numpy() * self.units['energy']
@@ -105,6 +107,14 @@ f"""{type(self).__name__} instance
                 data[col_name] = (cfg_table[obs_idx][col_idx], )
 
             return pd.DataFrame(data=data)
+
+    def cam2angle(self, tel_id):
+        cam2angle = u.Quantity(
+            list(
+                map(lambda idx: self.camscale[idx], tel_id)
+            )
+        )
+        return cam2angle
 
     def get_spec_data(self, n_events, emin, emax, index=-1):
         e0 = (emin * emax)**0.5
