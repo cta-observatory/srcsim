@@ -7,6 +7,7 @@ from dataclasses import dataclass
 
 @dataclass(frozen=True)
 class EventSample:
+    tel_id: u.Quantity
     obs_id: u.Quantity
     event_id: u.Quantity
     reco_src_x: u.Quantity
@@ -73,6 +74,7 @@ f"""{type(self).__name__} instance
     def from_file(cls, file_name):
         cam2angle = 1.5 / 450 *u.Unit('deg/mm')
         north_offset = 7
+        magic_tel_id = 5 * u.one  # tel_id expected from the MAGIC+LST simulations
 
         event_data = dict()
 
@@ -222,6 +224,7 @@ f"""{type(self).__name__} instance
 
         if is_mc:
             events = MagicStereoEvents(
+                tel_id = numpy.repeat(magic_tel_id, len(event_data['run_number'])),
                 obs_id = event_data['run_number'],
                 event_id = event_data['daq_event_number'],
                 reco_src_x = event_data['reco_src_x'],
@@ -248,6 +251,7 @@ f"""{type(self).__name__} instance
             )
         else:
             events = MagicStereoEvents(
+                tel_id = numpy.repeat(magic_tel_id, len(event_data['run_number'])),
                 obs_id = event_data['run_number'],
                 event_id = event_data['daq_event_number'],
                 reco_src_x = event_data['reco_src_x'],
@@ -274,6 +278,7 @@ f"""{type(self).__name__} instance
     def to_df(self):
         units = dict(
             # delta_t = u.s,
+            tel_id = u.one,
             obs_id = u.one,
             event_id = u.one,
             src_x = u.m,
