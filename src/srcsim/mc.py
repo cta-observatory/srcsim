@@ -38,10 +38,8 @@ class MCSample:
             self.data_table = pd.read_hdf(file_name, 'dl2/event/telescope/parameters/LST_LSTCam').query(f'obs_id == {obs_id}')
 
         # Getting the telescope pointing
-        pointing_data = self.data_table[['mc_az_tel', 'mc_alt_tel']]
-        tel_pos = SkyCoord(pointing_data['mc_az_tel'], pointing_data['mc_alt_tel'], unit=self.units['angle'], frame='altaz')
-        # Average poiting
-        self.tel_pos = SkyCoord(tel_pos.az.mean(), tel_pos.alt.mean(), frame='altaz')
+        pointing_data = self.data_table[['mc_az_tel', 'mc_alt_tel']].mean()
+        self.tel_pos = SkyCoord(pointing_data['mc_az_tel'], pointing_data['mc_alt_tel'], unit=self.units['angle'], frame='altaz')
         
         # Working out the simulation spectrum
         rmin, rmax = self.config_table[['min_scatter_range', 'max_scatter_range']].iloc[0].tolist() * self.units['distance']
@@ -54,13 +52,13 @@ class MCSample:
         self.spec_data['norm'] /= ground_area
 
         cam_x, cam_y = self.data_table[['src_x', 'src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle(self.data_table['tel_id'].tolist())
-        self.evt_coord = SkyCoord(cam_x, cam_y, frame=tel_pos.skyoffset_frame())
+        self.evt_coord = SkyCoord(cam_x, cam_y, frame=self.tel_pos.skyoffset_frame())
 
         self.evt_energy = self.data_table['mc_energy'].to_numpy() * self.units['energy']
 
         # Filtering out events with excessive offsets (e.g. due to the simulation numerical accuracy)
         offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0].tolist() * self.units['viewcone']
-        evt_offset = self.evt_coord.separation(tel_pos)
+        evt_offset = self.evt_coord.separation(self.tel_pos)
 
         in_fov = (evt_offset >= offset_min) & (evt_offset <= offset_max)
         self.data_table = self.data_table[in_fov]
