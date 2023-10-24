@@ -84,6 +84,8 @@ f"""{type(self).__name__} instance
             table.flush()
 
         df = self.events_triggered.to_df()
+        # Overwriting obs_id as it is not properly stored for events in the MC files
+        df['obs_id'] = self.meta.obs_id.value
         df.to_hdf(
             file_name,
             key='/dl2/event/telescope/parameters/MAGIC_MAGICCam',
