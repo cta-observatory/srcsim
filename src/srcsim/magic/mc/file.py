@@ -3,8 +3,25 @@ import healpy
 import astropy.units as u
 from dataclasses import dataclass
 
+from tables import open_file
+from tables import IsDescription
+from tables import UInt32Col, UInt64Col, Float32Col
+
 from .info import MagicMcInfo
 from .events import MagicStereoEvents, MagicMcOrigEvents
+
+
+class TablesMcInfo(IsDescription):
+    obs_id = UInt64Col()
+    num_showers = UInt64Col()
+    shower_reuse = UInt32Col()
+    energy_range_min = Float32Col()
+    energy_range_max = Float32Col()
+    spectral_index = Float32Col()
+    max_scatter_range = Float32Col()
+    min_scatter_range = Float32Col()
+    max_viewcone_radius = Float32Col()
+    min_viewcone_radius = Float32Col()
 
 
 @dataclass(frozen=True)
@@ -40,12 +57,34 @@ f"""{type(self).__name__} instance
         return self
 
     def write(self, file_name):
-        self.meta.to_df().to_hdf(
-            file_name,
-            key='/simulation/run_config',
-            mode='w'
+        units = dict(
+            energy = u.TeV,
+            angle = u.rad,
+            distance = u.m,
+            viewcone = u.deg
         )
-        self.events_triggered.to_df().to_hdf(
+
+        # Special treatment for run config as it's structure may be too complex for Pandas
+        with open_file(file_name, mode="w", title="MAGIC MC file") as output:
+            group = output.create_group("/", 'simulation', 'Simulation information')
+            table = output.create_table(group, 'run_config', TablesMcInfo, 'Simulation run configuration')
+            
+            entry = table.row
+            entry['obs_id'] = self.meta.obs_id.value
+            entry['num_showers'] = self.meta.num_showers.value
+            entry['shower_reuse'] = 1
+            entry['spectral_index'] = self.meta.spectral_index.value
+            entry['energy_range_min'] = self.meta.energy_range_min.to(units['energy']).value
+            entry['energy_range_max'] = self.meta.energy_range_max.to(units['energy']).value
+            entry['max_scatter_range'] = self.meta.max_scatter_range.to(units['distance']).value
+            entry['min_scatter_range'] = self.meta.min_scatter_range.to(units['distance']).value
+            entry['max_viewcone_radius'] = self.meta.max_viewcone_radius.to(units['viewcone']).value
+            entry['min_viewcone_radius'] = self.meta.min_viewcone_radius.to(units['viewcone']).value
+            entry.append()
+            table.flush()
+
+        df = self.events_triggered.to_df()
+        df.to_hdf(
             file_name,
             key='/dl2/event/telescope/parameters/MAGIC_MAGICCam',
             mode='a'
