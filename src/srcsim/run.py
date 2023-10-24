@@ -209,8 +209,8 @@ f"""{type(self).__name__} instance
 
                     # Reconstructed events coordinates
                     reco_coords = SkyCoord(
-                        evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                        evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                        evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle(evt['tel_id'].to_numpy()),
+                        evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle(evt['tel_id'].to_numpy()),
                         frame=offset_frame
                     )
                     evt = evt.assign(
