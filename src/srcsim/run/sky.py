@@ -1,9 +1,7 @@
 import yaml
-import numpy as np
-import pandas as pd
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
+from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 
 from .base import DataRun
 
