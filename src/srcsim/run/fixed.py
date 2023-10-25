@@ -210,33 +210,34 @@ f"""{type(self).__name__} instance
 
                 n_mc_events = len(sample.evt_energy)
                 n_events = np.random.poisson(weights.sum())
-                p = weights / weights.sum()
-                idx = np.random.choice(
-                    np.arange(n_mc_events),
-                    size=n_events,
-                    p=p
-                )
-
-                evt = sample.data_table.iloc[idx]
-                offset_frame = offset_frame[idx]
-                arrival_time = arrival_time[idx]
-                current_tel_pos = current_tel_pos[idx]
-
-                # Dropping the columns we're going to (re-)fill
-                evt = evt.drop(
-                    columns=['dragon_time', 'trigger_time'],
-                    errors='ignore'
-                )
-                evt = evt.drop(
-                    columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
-                    errors='ignore'
-                )
-                evt = evt.drop(
-                    columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'],
-                    errors='ignore'
-                )
 
                 if n_events > 0:
+                    p = weights / weights.sum()
+                    idx = np.random.choice(
+                        np.arange(n_mc_events),
+                        size=n_events,
+                        p=p
+                    )
+
+                    evt = sample.data_table.iloc[idx]
+                    offset_frame = offset_frame[idx]
+                    arrival_time = arrival_time[idx]
+                    current_tel_pos = current_tel_pos[idx]
+
+                    # Dropping the columns we're going to (re-)fill
+                    evt = evt.drop(
+                        columns=['dragon_time', 'trigger_time'],
+                        errors='ignore'
+                    )
+                    evt = evt.drop(
+                        columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
+                        errors='ignore'
+                    )
+                    evt = evt.drop(
+                        columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'],
+                        errors='ignore'
+                    )
+
                     # Events arrival time
                     evt = evt.assign(
                         dragon_time = arrival_time,
@@ -266,6 +267,7 @@ f"""{type(self).__name__} instance
                         reco_dec = reco_coords.icrs.dec.to('rad').value,
                     )
                 else:
+                    evt = sample.data_table.iloc[0:0]
                     evt = evt.assign(
                         dragon_time = np.zeros(0),
                         trigger_time = np.zeros(0),
