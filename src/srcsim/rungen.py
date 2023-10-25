@@ -7,7 +7,7 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 
-from .run import DataRun
+from .run import SkyDataRun
 
 
 def generator(config):
@@ -205,7 +205,7 @@ class AltAzBoxGenerator:
             pos_angles = wobble_start_angle + np.linspace(0, 2* np.pi, num=wobble_count+1)[:-1] * u.rad
 
             runs = tuple(
-                DataRun(
+                SkyDataRun(
                     tel_pos.directional_offset_by(pos_angles[run_id % wobble_count], wobble_offset),
                     tstart,
                     tstop,
@@ -217,7 +217,7 @@ class AltAzBoxGenerator:
 
         else:
             runs = tuple(
-                DataRun(tel_pos, tstart, tstop, obsloc, run_id)
+                SkyDataRun(tel_pos, tstart, tstop, obsloc, run_id)
                 for run_id, (tstart, tstop) in enumerate(zip(tstarts, tstops))
             )
         
@@ -251,7 +251,7 @@ class DataMatchingGenerator:
         )
 
         runs = [
-            DataRun(
+            SkyDataRun(
                 run_info['tel_pos'],
                 run_info['tstart'],
                 run_info['tstop'],

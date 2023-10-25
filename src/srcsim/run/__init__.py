@@ -1,1 +1,1 @@
-from .sky import DataRun
+from .sky import SkyDataRun

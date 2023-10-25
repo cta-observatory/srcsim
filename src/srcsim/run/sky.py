@@ -6,7 +6,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
 
 
-class DataRun:
+class SkyDataRun:
     def __init__(self, tel_pos, tstart, tstop, obsloc, id=0):
         self.id = id
         self.tel_pos = tel_pos
