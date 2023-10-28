@@ -6,8 +6,8 @@ from scipy.interpolate import CubicSpline
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
 
-from srcsim.rungen import get_trajectory, get_time_intervals
 from srcsim.run import FixedPointingDataRun
+from .helpers import get_trajectory
 
 
 class FixedObsGenerator:
