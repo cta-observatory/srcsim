@@ -5,7 +5,7 @@ from scipy.interpolate import CubicSpline
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation
 
-from srcsim.run import FixedPointingDataRun
+from ..run import FixedPointingDataRun
 from .helpers import get_trajectory
 
 
