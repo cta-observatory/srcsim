@@ -2,7 +2,7 @@ import yaml
 import datetime
 import argparse
 
-from srcsim.rungen import generator as rungen
+from srcsim.rungen.sky import generator as rungen
 
 
 def info_message(text):

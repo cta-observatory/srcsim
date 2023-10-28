@@ -7,7 +7,7 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 
-from .run import SkyDataRun
+from ..run import SkyDataRun
 
 
 def generator(config):
