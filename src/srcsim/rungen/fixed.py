@@ -38,7 +38,7 @@ class FixedObsGenerator:
 
     @classmethod
     def get_runs(cls, obsloc, tel_pos, tobs, alt, ra_width, tstart=None):
-        time_step = 1 * u.m
+        time_step = 1 * u.minute
 
         tel_pos_trail = SkyCoord(
             tel_pos.icrs.ra + ra_width / 2,
