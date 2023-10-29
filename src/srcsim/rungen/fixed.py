@@ -3,7 +3,7 @@ import numpy as np
 import astropy.units as u
 from scipy.interpolate import CubicSpline
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, EarthLocation
+from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 
 from ..run import FixedPointingDataRun
 from .helpers import get_trajectory
@@ -84,7 +84,7 @@ class FixedObsGenerator:
         ndays_full = np.floor(nsequences)
         ndays_total = np.ceil(nsequences)
 
-        if ndays_full > 0:
+        if ndays_full > 1:
             # Next pass - to cover the simulation time interval with fully completed runs
             track_lead = get_trajectory(
                 tel_pos_lead.icrs,
@@ -135,14 +135,14 @@ class FixedObsGenerator:
             track_lead = get_trajectory(
                 tel_pos_lead.icrs,
                 tstart,
-                tstop=tstart + ndays_full * u.d,
+                tstop=tstart + ndays_total * u.d,
                 time_step=time_step,
                 obsloc=obsloc
             )
             track_trail = get_trajectory(
                 tel_pos_trail.icrs,
                 tstart,
-                tstop=tstart + ndays_full * u.d,
+                tstop=tstart + ndays_total * u.d,
                 time_step=time_step,
                 obsloc=obsloc
             )
@@ -158,8 +158,14 @@ class FixedObsGenerator:
             tstarts = Time(cs_lead.roots(extrapolate=False), format='mjd')
             tstops = Time(tstarts + tobs / (len(tstarts)))
 
+        frame = AltAz(
+            obstime=tstarts[0],
+            location=obsloc
+        )
+        tel_pos_altaz = tel_pos_lead.transform_to(frame)
+
         runs = tuple(
-            FixedPointingDataRun(tel_pos, tstart, tstop, obsloc, run_id)
+            FixedPointingDataRun(tel_pos_altaz, tstart, tstop, obsloc, run_id)
             for run_id, (tstart, tstop) in enumerate(zip(tstarts, tstops))
         )
 
