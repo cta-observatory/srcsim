@@ -7,7 +7,7 @@ import astropy.units as u
 
 from srcsim.mc import MCCollection
 from srcsim.src import generator as srcgen
-from srcsim.run import SkyDataRun
+from srcsim.run import generator as rungen
 
 
 def info_message(text):
@@ -80,7 +80,7 @@ def main():
     print(srcs)
 
     info_message('Preparing the data run')
-    run = SkyDataRun.from_config(cfg['run'])
+    run = rungen(cfg['run'])
     print(run)
 
     info_message('Starting event sampling')
