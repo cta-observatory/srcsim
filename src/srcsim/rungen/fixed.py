@@ -17,7 +17,6 @@ class FixedObsGenerator:
         else:
             cfg = config
 
-        tstart = Time(cfg['time']['start'])
         ra_width = u.Quantity(cfg['pointing']['width'])
         alt = u.Quantity(cfg['pointing']['center']['alt'])
         tel_pos = SkyCoord(
@@ -26,7 +25,10 @@ class FixedObsGenerator:
             frame='icrs'
         )
 
+        tstart = Time(cfg['time']['start'])
         duration = u.Quantity(cfg['time']['duration'])
+        accuracy = u.Quantity(cfg['time']['accuracy'])
+        max_run_duration = u.Quantity(cfg['time']['max_run_duration']) if cfg['time']['max_run_duration'] is not None else None
 
         obsloc = EarthLocation(
             lat=u.Quantity(cfg['location']['lat']),
@@ -34,10 +36,10 @@ class FixedObsGenerator:
             height=u.Quantity(cfg['location']['height']),
         )
 
-        return cls.get_runs(obsloc, tel_pos, duration, alt, ra_width, tstart)
+        return cls.get_runs(obsloc, tel_pos, duration, alt, ra_width, tstart, accuracy, max_run_duration)
 
     @classmethod
-    def get_runs(cls, obsloc, tel_pos, tobs, alt, ra_width, tstart=None):
+    def get_runs(cls, obsloc, tel_pos, tobs, alt, ra_width, tstart=None, accuracy=1*u.minute, max_run_duration=None):
         time_step = 1 * u.minute
 
         tel_pos_trail = SkyCoord(
