@@ -6,7 +6,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 
 from ..run import FixedPointingDataRun
-from .helpers import get_trajectory
+from .helpers import get_trajectory, enforce_max_interval_length
 
 
 class FixedObsGenerator:
@@ -157,6 +157,8 @@ class FixedObsGenerator:
             )
             tstarts = Time(cs_lead.roots(extrapolate=False), format='mjd')
             tstops = Time(tstarts + tobs / (len(tstarts)))
+
+        tstarts, tstops = enforce_max_interval_length(tstarts, tstops, max_run_duration)
 
         frame = AltAz(
             obstime=tstarts[0],
