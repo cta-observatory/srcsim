@@ -40,8 +40,6 @@ class FixedObsGenerator:
 
     @classmethod
     def get_runs(cls, obsloc, tel_pos, tobs, alt, ra_width, tstart=None, accuracy=1*u.minute, max_run_duration=None):
-        time_step = 1 * u.minute
-
         tel_pos_trail = SkyCoord(
             tel_pos.icrs.ra + ra_width / 2,
             tel_pos.icrs.dec,
@@ -58,14 +56,14 @@ class FixedObsGenerator:
             tel_pos_trail.icrs,
             tstart,
             tstop=tstart + 1 * u.d,
-            time_step=time_step,
+            time_step=accuracy,
             obsloc=obsloc
         )
         track_lead = get_trajectory(
             tel_pos_lead.icrs,
             tstart,
             tstop=tstart + 1 * u.d,
-            time_step=time_step,
+            time_step=accuracy,
             obsloc=obsloc
         )
         cs_lead = CubicSpline(
@@ -92,14 +90,14 @@ class FixedObsGenerator:
                 tel_pos_lead.icrs,
                 tstart,
                 tstop=tstart + ndays_full * u.d,
-                time_step=time_step,
+                time_step=accuracy,
                 obsloc=obsloc
             )
             track_trail = get_trajectory(
                 tel_pos_trail.icrs,
                 tstart,
                 tstop=tstart + ndays_full * u.d,
-                time_step=time_step,
+                time_step=accuracy,
                 obsloc=obsloc
             )
 
@@ -120,7 +118,7 @@ class FixedObsGenerator:
                 tel_pos_lead.icrs,
                 tstart=tstart + ndays_full * u.d,
                 tstop=tstart + ndays_total * u.d,
-                time_step=time_step,
+                time_step=accuracy,
                 obsloc=obsloc
             )
             cs_lead = CubicSpline(
@@ -138,14 +136,14 @@ class FixedObsGenerator:
                 tel_pos_lead.icrs,
                 tstart,
                 tstop=tstart + ndays_total * u.d,
-                time_step=time_step,
+                time_step=accuracy,
                 obsloc=obsloc
             )
             track_trail = get_trajectory(
                 tel_pos_trail.icrs,
                 tstart,
                 tstop=tstart + ndays_total * u.d,
-                time_step=time_step,
+                time_step=accuracy,
                 obsloc=obsloc
             )
 
