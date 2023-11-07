@@ -161,14 +161,14 @@ class FixedObsGenerator:
         tstarts, tstops = enforce_max_interval_length(tstarts, tstops, max_run_duration)
 
         frame = AltAz(
-            obstime=tstarts[0],
+            obstime=tstarts,
             location=obsloc
         )
         tel_pos_altaz = tel_pos_lead.transform_to(frame)
 
         runs = tuple(
-            FixedPointingDataRun(tel_pos_altaz, tstart, tstop, obsloc, run_id)
-            for run_id, (tstart, tstop) in enumerate(zip(tstarts, tstops))
+            FixedPointingDataRun(target_altaz, tstart, tstop, obsloc, run_id)
+            for run_id, (tstart, tstop, target_altaz) in enumerate(zip(tstarts, tstops, tel_pos_altaz))
         )
 
         return runs
