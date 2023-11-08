@@ -162,13 +162,21 @@ class FixedObsGenerator:
             tstarts = Time(cs_lead.roots(extrapolate=False), format='mjd')
             tstops = Time(tstarts + tobs / (len(tstarts)))
 
-        tstarts, tstops = enforce_max_interval_length(tstarts, tstops, max_run_duration)
-
-        frame = AltAz(
+        # Telescope positions before the time interevals will be sliced
+        # These should contain only two different values - those before and after culmination
+        _frame = AltAz(
             obstime=tstarts,
             location=obsloc
         )
-        tel_pos_altaz = tel_pos_lead.transform_to(frame)
+        _tel_pos_altaz = tel_pos_lead.transform_to(_frame)
+
+        tstarts, tstops = enforce_max_interval_length(tstarts, tstops, max_run_duration)
+
+        # Choosing the closest Alt/Az telescope position from those before interval slicing
+        tel_pos_altaz = [
+            _tel_pos_altaz[abs(_tel_pos_altaz.obstime - tstart).argmin()]
+            for tstart in tstarts
+        ]
 
         runs = tuple(
             FixedPointingDataRun(target_altaz, tstart, tstop, obsloc, run_id)
