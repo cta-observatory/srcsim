@@ -84,7 +84,7 @@ class FixedObsGenerator:
         ndays_full = np.floor(nsequences)
         ndays_total = np.ceil(nsequences)
 
-        if ndays_full > 1:
+        if ndays_total > 1:
             # Next pass - to cover the simulation time interval with fully completed runs
             track_lead = get_trajectory(
                 tel_pos_lead.icrs,
