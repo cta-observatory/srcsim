@@ -128,8 +128,12 @@ class FixedObsGenerator:
             _tstarts = Time(cs_lead.roots(extrapolate=False), format='mjd')
             _tstops = Time(_tstarts + remaining_tobs / (len(_tstarts)))
 
-            tstarts = Time([tstarts, _tstarts])
-            tstops = Time([tstops, _tstops])
+            # Likely an astropy bug (tested with v5.3.4):
+            # the latter does not work if len(tstarts) == len(_tstarts)
+            # tstarts = Time([tstarts, _tstarts])
+            # tstops = Time([tstops, _tstops])
+            tstarts = Time(np.concatenate([tstarts.mjd, _tstarts.mjd]), format='mjd')
+            tstops = Time(np.concatenate([tstops.mjd, _tstops.mjd]), format='mjd')
 
         else:
             track_lead = get_trajectory(
