@@ -236,7 +236,7 @@ f"""{type(self).__name__} instance
         return interp
 
     def energy_to_pixel(self, energy):
-        return self._energy_interpolator(energy.to('dex(MeV)'))
+        return self._energy_interpolator(energy.to('dex(MeV)').value)
 
     def cube_value(self, x, y, z):
         val = self._cube_interpolator(list(zip(x.flatten(), y.flatten(), z.flatten()))) * self.cube.unit
