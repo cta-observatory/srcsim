@@ -147,6 +147,7 @@ f"""{type(self).__name__} instance
 class FitsCubeSource(Source):
     def __init__(self, emission_type, file_name, name='fits_source'):
         cube, wcs = self.read_data(file_name)
+        energies = self.read_energies(file_name)
 
         pos = wcs.pixel_to_world(0, 0, 0)[0]
         super().__init__(emission_type, pos=pos, dnde=None, name=name)
@@ -154,6 +155,7 @@ class FitsCubeSource(Source):
         self.file_name = file_name
         self.cube = cube
         self.wcs = wcs
+        self.energies = energies
         self._cube_interpolator = self._get_cube_interpolator(cube)
 
     def __repr__(self):
@@ -189,6 +191,18 @@ f"""{type(self).__name__} instance
             cube = (hdus['primary'].data.transpose() - zero) * scale * unit
 
         return cube, wcs
+
+    @classmethod
+    def read_energies(cls, file_name):
+        with fits.open(file_name) as hdus:
+            hdu_names = [hdu.name.lower() for hdu in hdus]
+            if 'energies' in hdu_names:
+                unit = u.Unit(hdus['energies'].columns['energy'].unit)
+                energies = hdus['energies'].data['energy'] * unit
+            else:
+                energies = None
+
+        return energies
 
     @classmethod
     def _get_cube_interpolator(self, cube):
