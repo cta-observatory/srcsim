@@ -157,6 +157,10 @@ class FitsCubeSource(Source):
         self.wcs = wcs
         self.energies = energies
         self._cube_interpolator = self._get_cube_interpolator(cube)
+        if energies is None:
+            self._energy_interpolator = None
+        else:
+            self._energy_interpolator = self._get_energy_interpolator(energies)
 
     def __repr__(self):
         print(
@@ -219,12 +223,31 @@ f"""{type(self).__name__} instance
 
         return interp
 
+    @classmethod
+    def _get_energy_interpolator(self, energies):
+        z = np.arange(len(energies))
+        interp = scipy.interpolate.RegularGridInterpolator(
+            (energies.to('dex(MeV)').value,),
+            z,
+            bounds_error = False,
+            fill_value = 0,
+        )
+
+        return interp
+
+    def energy_to_pixel(self, energy):
+        return self._energy_interpolator(energy.to('dex(MeV)'))
+
     def cube_value(self, x, y, z):
         val = self._cube_interpolator(list(zip(x.flatten(), y.flatten(), z.flatten()))) * self.cube.unit
         return val.reshape(x.shape)
 
     def dndedo(self, energy, coord):
         x, y, z = self.wcs.world_to_pixel(coord, energy)
+
+        if self._energy_interpolator is not None:
+            z = self.energy_to_pixel(energy.flatten()).reshape(energy.shape)
+
         return self.cube_value(x, y, z)
 
 
