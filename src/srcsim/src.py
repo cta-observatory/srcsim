@@ -230,7 +230,7 @@ f"""{type(self).__name__} instance
             (energies.to('dex(MeV)').value,),
             z,
             bounds_error = False,
-            fill_value = 0,
+            fill_value = -1,
         )
 
         return interp
