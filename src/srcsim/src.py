@@ -196,6 +196,13 @@ f"""{type(self).__name__} instance
 
         return sky_map, wcs
 
+    def dndo(self, coord):
+        x, y = self.wcs.world_to_pixel(coord)
+        x, y = np.int16(
+            np.floor((x,y))
+        )
+        return self.sky_map[x, y]
+
 class FitsCubeSource(Source):
     def __init__(self, emission_type, file_name, name='fits_source'):
         cube, wcs = self.read_data(file_name)
