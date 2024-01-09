@@ -159,7 +159,7 @@ class FitsMapSource(Source):
         super().__init__(emission_type, pos=pos, dnde=dnde, name=name)
 
         self.file_name = file_name
-        self.map = map
+        self.sky_map = sky_map
         self.wcs = wcs
 
     def __repr__(self):
