@@ -161,6 +161,7 @@ class FitsMapSource(Source):
         self.file_name = file_name
         self.sky_map = sky_map
         self.wcs = wcs
+        self._sky_map_interpolator = self._get_sky_map_interpolator(sky_map)
 
     def __repr__(self):
         print(
@@ -196,12 +197,27 @@ f"""{type(self).__name__} instance
 
         return sky_map, wcs
 
+    @classmethod
+    def _get_sky_map_interpolator(self, sky_map):
+        x = np.arange(sky_map.shape[0])
+        y = np.arange(sky_map.shape[1])
+
+        interp = scipy.interpolate.RegularGridInterpolator(
+            (x, y),
+            sky_map.value,
+            bounds_error = False,
+            fill_value = 0,
+        )
+
+        return interp
+
+    def sky_map_value(self, x, y):
+        val = self._sky_map_interpolator(list(zip(x.flatten(), y.flatten()))) * self.sky_map.unit
+        return val.reshape(x.shape)
+
     def dndo(self, coord):
         x, y = self.wcs.world_to_pixel(coord)
-        x, y = np.int16(
-            np.floor((x,y))
-        )
-        return self.sky_map[x, y]
+        return self.sky_map_value(x, y)
 
 class FitsCubeSource(Source):
     def __init__(self, emission_type, file_name, name='fits_source'):
