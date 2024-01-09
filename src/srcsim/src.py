@@ -188,12 +188,15 @@ f"""{type(self).__name__} instance
             if 'BSCALE' in hdus['primary'].header:
                 scale = hdus['primary'].header['BSCALE']
 
-            # if 'BUNIT' in hdus['primary'].header:
-            #     unit = u.Unit(hdus['primary'].header['BUNIT'])
-            # else:
-            #     raise ValueError("No 'BUNIT' keyword in the primary extension header")
+            if 'BUNIT' in hdus['primary'].header:
+                unit = u.Unit(hdus['primary'].header['BUNIT'])
+            else:
+                # raise ValueError("No 'BUNIT' keyword in the primary extension header")
+                pixel_area = wcs.celestial.proj_plane_pixel_area()
+                n_pixels = np.prod(wcs.celestial.array_shape)
+                unit = 1 / (pixel_area * n_pixels)
 
-            sky_map = (hdus['primary'].data.transpose() - zero) * scale #* unit
+            sky_map = (hdus['primary'].data.transpose() - zero) * scale * unit
 
         return sky_map, wcs
 
