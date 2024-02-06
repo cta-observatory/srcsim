@@ -50,6 +50,15 @@ class IRFSample:
 
         return cls(altaz, irfs.get('aeff'), irfs.get('edisp'), irfs.get('bkg'), irfs.get('psf'))
 
+    def to_dict(self):
+        data = dict(
+            aeff = self.aeff,
+            edisp = self.edisp,
+            bkg = self.bkg,
+            psf = self.psf
+        )
+        return data
+
 
 class IRFCollection:
     def __init__(self, file_mask=None, samples=None):
