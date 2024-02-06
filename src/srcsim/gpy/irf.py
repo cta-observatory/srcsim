@@ -20,6 +20,12 @@ class IRFSample:
     bkg: Background2D = None
     psf: PSF3D = None
 
+    def __str__(self):
+        desc = f"""{type(self).__name__} instance
+    {'AltAz':.<20s}: {self.altaz}
+"""
+        return desc
+
     @classmethod
     def from_fits(cls, file_name):
         parsed = re.findall(
@@ -53,6 +59,12 @@ class IRFCollection:
             self.samples = self.read_files(file_mask)
         else:
             self.samples = samples
+
+    def __str__(self):
+        desc = f"""{type(self).__name__} instance
+    {'Sample alt/az':.<20s}: {SkyCoord([sample.altaz for sample in self.samples])}
+"""
+        return desc
 
     @classmethod
     def read_files(cls, file_mask):
