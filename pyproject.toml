@@ -35,3 +35,4 @@ dependencies = [
 [project.scripts]
 getruns = "srcsim.scripts.get_runs:main"
 simrun = "srcsim.scripts.sim_run:main"
+simdl3 = "srcsim.gpy.scripts.sim_dl3:main"
