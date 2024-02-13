@@ -53,9 +53,7 @@ def main():
     print(irfs)
 
     info_message('Preparing sources')
-    source_models = Models.from_dict(
-        yaml.load(open('model.yaml', "r"), Loader=yaml.FullLoader)
-    )
+    source_models = Models.from_dict(cfg['model'])
     print(source_models)
 
     info_message('Preparing the data run')
