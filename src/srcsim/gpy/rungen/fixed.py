@@ -12,8 +12,27 @@ from .helpers import get_trajectory, enforce_max_interval_length
 
 
 class FixedObsGenerator:
+    """
+    Generator of the DRIFT sky runs with a fixed alt/az position,
+    scanning a certain stripe in RA axis.
+    """
+
     @classmethod
     def get_runs_from_config(cls, config):
+        """
+        Returns runs corresponding to the specified config.
+
+        Parameters
+        ----------
+        config: dict
+            Configuration dictionary
+
+        Returns
+        -------
+        runs: tuple
+            Generated runs
+        """
+
         if isinstance(config, str):
             cfg = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
         else:
@@ -42,6 +61,34 @@ class FixedObsGenerator:
 
     @classmethod
     def get_runs(cls, obsloc, tel_pos, tobs, alt, ra_width, tstart=None, accuracy=1*u.minute, max_run_duration=None):
+        """
+        Generates runs corresponding to specified sky constraints.
+
+        Parameters
+        ----------
+        obsloc: EarthLocation
+            telescope location
+        tel_pos: SkyCoord
+            equatorial telscope pointing coordinates
+        tobs: u.Quantity
+            total observation duration
+        alt: u.Quantity
+            target telescope altitude
+        ra_width: u.Quantity
+            Observation sky patch width in RA direction.
+        tstart: Time
+            start time for generated runs
+        accuracy: u.Quantity
+            trajectory time step to use in calculations
+        max_run_duration: u.Quantity
+            maximal length of a single run to allow
+
+        Returns
+        -------
+        runs: tuple
+            Generated runs
+        """
+
         tel_pos_trail = SkyCoord(
             tel_pos.icrs.ra + ra_width / 2,
             tel_pos.icrs.dec,
