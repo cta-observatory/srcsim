@@ -8,7 +8,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 
 from ..run import SkyDataRun
-from .helpers import get_trajectory, get_time_intervals, read_obs
+from .helpers import get_trajectory, get_time_intervals, read_obs, enforce_max_interval_length
 
 
 class AltAzBoxGenerator:
@@ -138,7 +138,7 @@ class AltAzBoxGenerator:
             obsloc=obsloc
         )
         
-        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy, max_run_duration)
+        tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
         run_durations = tstops - tstarts
         
         nsequences = (tobs / np.sum(run_durations)).decompose()
@@ -154,7 +154,7 @@ class AltAzBoxGenerator:
                 time_step=accuracy,
                 obsloc=obsloc
             )
-            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy, max_run_duration)
+            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
             remaining_tobs = tobs - np.sum(tstops - tstarts)
         
             # Fourth pass - additional incomplete runs
@@ -165,7 +165,7 @@ class AltAzBoxGenerator:
                 time_step=accuracy,
                 obsloc=obsloc
             )
-            _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, accuracy, max_run_duration)
+            _tstarts, _tstops = get_time_intervals(_tel_altaz, altmin, altmax, azmin, azmax, accuracy)
             _tstops = Time(_tstarts + remaining_tobs / (len(_tstarts)))
 
             tstarts = Time([tstarts, _tstarts])
@@ -179,8 +179,10 @@ class AltAzBoxGenerator:
                 time_step=accuracy,
                 obsloc=obsloc
             )
-            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy, max_run_duration)
+            tstarts, tstops = get_time_intervals(tel_altaz, altmin, altmax, azmin, azmax, accuracy)
             tstops = Time(tstarts + tobs / (len(tstarts)))
+
+        tstarts, tstops = enforce_max_interval_length(tstarts, tstops, max_run_duration)
 
         if use_wobble:
             pos_angles = wobble_start_angle + np.linspace(0, 2* np.pi, num=wobble_count+1)[:-1] * u.rad
