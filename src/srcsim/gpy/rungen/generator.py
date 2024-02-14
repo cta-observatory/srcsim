@@ -1,7 +1,7 @@
 import yaml
 
 from .sky import AltAzBoxGenerator, DataMatchingGenerator
-# from .fixed import FixedObsGenerator
+from .fixed import FixedObsGenerator
 
 
 def generator(config):
@@ -29,8 +29,8 @@ def generator(config):
 
     if cfg['type'] == "altaz_box":
         runs = AltAzBoxGenerator.get_runs_from_config(cfg)
-    # elif cfg['type'] == "fixed_altaz":
-    #     runs = FixedObsGenerator.get_runs_from_config(cfg)
+    elif cfg['type'] == "fixed_altaz":
+        runs = FixedObsGenerator.get_runs_from_config(cfg)
     elif cfg['type'] == "data_matching":
         runs = DataMatchingGenerator.get_runs_from_config(cfg)
     else:
