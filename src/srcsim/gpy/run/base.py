@@ -143,14 +143,14 @@ class DataRun:
         """
         pass
 
-    def predict(self, irf_collections, model, tel_pos_tolerance=None):
+    def predict(self, irf_collection, model, tel_pos_tolerance=None):
         """
         Creates an observation that would correspond to this run
         given the specified IRFs and field of view model.
 
         Parameters
         ----------
-        irf_collections: .irf.IRFCollection
+        irf_collection: .irf.IRFCollection
             A collection to choose the appropriate IRF from
         model: gammapy.modeling.models.Model
             Field of view model
@@ -172,11 +172,11 @@ class DataRun:
         tel_pos = self.tel_pos_to_altaz(frame_tref)
 
         if tel_pos_tolerance is None:
-            irfs = irf_collections.get_closest(tel_pos.altaz)
+            irfs = irf_collection.get_closest(tel_pos.altaz)
         elif isinstance(tel_pos_tolerance, u.Quantity):
-            irfs = irf_collections.get_nearby(tel_pos, tel_pos_tolerance)
+            irfs = irf_collection.get_nearby(tel_pos, tel_pos_tolerance)
         elif isinstance(tel_pos_tolerance, list) or isinstance(tel_pos_tolerance, tuple):
-            irfs = irf_collections.get_in_box(
+            irfs = irf_collection.get_in_box(
                 tel_pos,
                 max_lon_offset=tel_pos_tolerance[0],
                 max_lat_offset=tel_pos_tolerance[1],
