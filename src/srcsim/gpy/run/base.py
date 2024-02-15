@@ -1,9 +1,8 @@
-import numpy as np
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, SkyOffsetFrame, AltAz
+from astropy.coordinates import AltAz
 
-from gammapy.data import Observation, PointingMode, FixedPointingInfo
+from gammapy.data import Observation
 from gammapy.datasets import MapDataset
 from gammapy.maps import MapAxis, WcsGeom
 # from gammapy.datasets import MapDatasetEventSampler

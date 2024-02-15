@@ -3,10 +3,7 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, EarthLocation, AltAz
 
-from gammapy.data import Observation, PointingMode, FixedPointingInfo
-from gammapy.datasets import MapDataset, MapDatasetEventSampler
-from gammapy.makers import MapDatasetMaker
-from gammapy.maps import MapAxis, WcsGeom
+from gammapy.data import PointingMode, FixedPointingInfo
 
 from .base import DataRun
 
