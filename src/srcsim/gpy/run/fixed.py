@@ -71,6 +71,36 @@ class FixedPointingDataRun(DataRun):
 
         return data_run
 
+    @property
+    def pointing(self):
+        pointing = FixedPointingInfo(
+            fixed_altaz=self.tel_pos, 
+            mode=self.mode,
+            location=self.obsloc
+        )
+        return pointing
+    
+    @property
+    def slew_length_ra(self):
+        frame_start = AltAz(obstime=self.tstart, location=self.obsloc)
+        frame_stop = AltAz(obstime=self.tstop, location=self.obsloc)
+
+        tel_pos_start = SkyCoord(self.tel_pos.az, self.tel_pos.alt, frame=frame_start)
+        tel_pos_stop = SkyCoord(self.tel_pos.az, self.tel_pos.alt, frame=frame_stop)
+
+        return tel_pos_stop.icrs.ra - tel_pos_start.icrs.ra
+    
+    @property
+    def tel_pos_center_icrs(self):
+        frame_tref = AltAz(
+            obstime=Time(
+                (self.tstart.mjd + self.tstop.mjd) / 2,
+                format='mjd'
+            ),
+            location=self.obsloc
+        )
+        return SkyCoord(self.tel_pos.az, self.tel_pos.alt, frame=frame_tref)
+
     def to_dict(self):
         data = {'id': self.id, 'pointing': {}, 'time': {}, 'location': {}}
 
@@ -162,25 +192,9 @@ class FixedPointingDataRun(DataRun):
             name="migra"
         )
 
-        frame_tref = AltAz(
-            obstime=Time(
-                (self.tstart.mjd + self.tstop.mjd) / 2,
-                format='mjd'
-            ),
-            location=self.obsloc
-        )
-        frame_start = AltAz(obstime=self.tstart, location=self.obsloc)
-        frame_stop = AltAz(obstime=self.tstop, location=self.obsloc)
-        
-        tel_pos_ref = SkyCoord(self.tel_pos.az, self.tel_pos.alt, frame=frame_tref)
-        tel_pos_start = SkyCoord(self.tel_pos.az, self.tel_pos.alt, frame=frame_start)
-        tel_pos_stop = SkyCoord(self.tel_pos.az, self.tel_pos.alt, frame=frame_stop)
-
-        ra_width = tel_pos_stop.icrs.ra - tel_pos_start.icrs.ra
-
         geom = WcsGeom.create(
-            skydir=tel_pos_ref.icrs,
-            width=(ra_width.to('deg').value + 5, 5),
+            skydir=self.tel_pos_center_icrs,
+            width=(self.slew_length_ra.to('deg').value + 5, 5),
             binsz=0.1,
             frame="icrs",
             axes=[energy_axis],
