@@ -37,6 +37,27 @@ class FixedPointingDataRun(DataRun):
 
     @classmethod
     def from_config(cls, config):
+        """
+        Create run from the specified configuration.
+        This method needs to be overloaded in the child classes.
+
+        Parameters
+        ----------
+        config: str or dict
+            Run configuration to use. If string,
+            configuration will be loaded from the YAML
+            file specified by "config".
+
+        Returns
+        -------
+        run: DataRun
+            Corresponding DataRun child instance
+
+        Notes
+        -----
+        See also self.to_dict()
+        """
+
         if isinstance(config, str):
             cfg = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
         else:
@@ -67,6 +88,14 @@ class FixedPointingDataRun(DataRun):
 
     @property
     def pointing(self):
+        """
+        Observation pointing info.
+
+        Returns
+        -------
+        info: gammapy.data.FixedPointingInfo
+        """
+
         pointing = FixedPointingInfo(
             fixed_altaz=self.tel_pos, 
             mode=self.mode,
@@ -76,6 +105,17 @@ class FixedPointingDataRun(DataRun):
     
     @property
     def slew_length_ra(self):
+        """
+        Observation slew distance in RA corresponding to
+        this runs alt/az and duration.
+        Will be used to define the simulation WCS extension.
+
+        Returns
+        -------
+        u.Quantity
+            slew length in RA
+        """
+
         frame_start = AltAz(obstime=self.tstart, location=self.obsloc)
         frame_stop = AltAz(obstime=self.tstop, location=self.obsloc)
 
@@ -86,6 +126,15 @@ class FixedPointingDataRun(DataRun):
     
     @property
     def tel_pos_center_icrs(self):
+        """
+        Telescope pointing center in equatorial (ICRS) coordinates
+
+        Returns
+        -------
+        astropy.coordinates.SkyCoord
+            pointing center
+        """
+
         frame_tref = AltAz(
             obstime=Time(
                 (self.tstart.mjd + self.tstop.mjd) / 2,
@@ -96,6 +145,19 @@ class FixedPointingDataRun(DataRun):
         return SkyCoord(self.tel_pos.az, self.tel_pos.alt, frame=frame_tref)
 
     def to_dict(self):
+        """
+        Converts the class definition to a configuration dict.
+
+        Returns
+        -------
+        dict:
+            Class configuration as dict
+
+        Notes
+        -----
+        See also self.from_config()
+        """
+
         data = {'id': self.id, 'pointing': {}, 'time': {}, 'location': {}}
 
         data['pointing']['alt'] = str(self.tel_pos.alt.to('deg').value) + ' deg'
@@ -111,6 +173,20 @@ class FixedPointingDataRun(DataRun):
         return data
     
     def tel_pos_to_altaz(self, frame):
+        """
+        Transform ICRS telescope poiting to the specified alt/az frame.
+
+        Parameters
+        ----------
+        frame: astropy.coordinates.AltAz
+            Frame to transform the telescope pointing to.
+
+        Returns
+        -------
+        astropy.coordinates.SkyCoord
+            Telescope pointing in alt/az frame
+        """
+
         if frame.obstime.size > 1:
             tel_pos = SkyCoord(
                 np.repeat(self.tel_pos.az, frame.obstime.size),
