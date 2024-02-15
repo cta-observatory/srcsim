@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "srcsim"
-version = "1.0.0"
+version = "2.0.0"
 authors = [
   { name="Ievgen Vovk", email="vovk@icrr.u-tokyo.ac.jp" },
   { name="Marcel Strzys", email="strzys@icrr.u-tokyo.ac.jp" },
