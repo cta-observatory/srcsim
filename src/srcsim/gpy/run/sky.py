@@ -12,6 +12,8 @@ from .base import DataRun
 
 
 class SkyDataRun(DataRun):
+    mode = PointingMode.POINTING
+
     def __str__(self):
         frame_start = AltAz(obstime=self.tstart, location=self.obsloc)
         frame_stop = AltAz(obstime=self.tstop, location=self.obsloc)

@@ -18,6 +18,8 @@ from .base import DataRun
 
 
 class FixedPointingDataRun(DataRun):
+    mode = PointingMode.DRIFT
+
     def __str__(self):
         frame_start = AltAz(obstime=self.tstart, location=self.obsloc)
         frame_stop = AltAz(obstime=self.tstop, location=self.obsloc)

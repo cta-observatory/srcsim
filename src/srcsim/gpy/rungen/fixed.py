@@ -228,7 +228,7 @@ class FixedObsGenerator:
         ]
 
         runs = tuple(
-            FixedPointingDataRun(target_altaz, tstart, tstop, obsloc, run_id, PointingMode.DRIFT)
+            FixedPointingDataRun(target_altaz, tstart, tstop, obsloc, run_id)
             for run_id, (tstart, tstop, target_altaz) in enumerate(zip(tstarts, tstops, tel_pos_altaz))
         )
 
