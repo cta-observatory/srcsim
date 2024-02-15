@@ -11,6 +11,14 @@ from gammapy.datasets import MapDatasetEventSampler
 
 
 class MapDatasetEventSampler(MapDatasetEventSampler):
+    """
+    Drop-in replacement of the gammapy.datasets.MapDatasetEventSampler class
+    with the support of DRIFT observations. Meant to be temporary till
+    the corresponding changes are not introduced into gammapy.
+
+    Based on https://docs.gammapy.org/1.1/_modules/gammapy/datasets/simulate.html#MapDatasetEventSampler
+    """
+
     def sample_sources(self, dataset):
         """Sample source model components.
 

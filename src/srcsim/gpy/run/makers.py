@@ -13,6 +13,14 @@ from gammapy.data import PointingMode
 
 
 class MapDatasetMaker(MapDatasetMaker):
+    """
+    Drop-in replacement of the gammapy.makers.MapDatasetMaker class
+    with the support of DRIFT observations. Meant to be temporary till
+    the corresponding changes are not introduced into gammapy.
+
+    Based on https://docs.gammapy.org/1.1/_modules/gammapy/makers/map.html#MapDatasetMaker
+    """
+
     @staticmethod
     def make_exposure(geom, observation, use_region_center=True):
         """Make exposure map.
