@@ -5,8 +5,6 @@ from scipy.interpolate import CubicSpline
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, AltAz, EarthLocation
 
-from gammapy.data import PointingMode
-
 from ..run import FixedPointingDataRun
 from .helpers import get_trajectory, enforce_max_interval_length
 
