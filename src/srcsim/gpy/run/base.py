@@ -16,6 +16,22 @@ class DataRun:
     mode = None
 
     def __init__(self, tel_pos, tstart, tstop, obsloc, id=0):
+        """
+        Creates a generic data run class instance.
+
+        Parameters
+        ----------
+        tel_pos: astropy.coordinates.SkyCoord
+            Telescope pointing position
+        tstart: astropy.time.Time
+            Run time start
+        tstop: astropy.time.Time
+            Run time stop
+        obsloc: astropy.coordinates.EarthLocation
+            Telescope location
+        id: int
+            Run ID
+        """
         self.id = id
         self.tel_pos = tel_pos
         self.obsloc = obsloc
@@ -24,31 +40,127 @@ class DataRun:
 
     @classmethod
     def from_config(cls, config):
+        """
+        Create run from the specified configuration.
+        This method needs to be overloaded in the child classes.
+
+        Parameters
+        ----------
+        config: str or dict
+            Run configuration to use. If string,
+            configuration will be loaded from the YAML
+            file specified by "config".
+
+        Returns
+        -------
+        run: DataRun
+            Corresponding DataRun child instance
+
+        Notes
+        -----
+        See also self.to_dict()
+        """
         pass
 
     @property
     def pointing(self):
+        """
+        Observation pointing info.
+        This method needs to be overloaded in the child classes.
+
+        Returns
+        -------
+        info: gammapy.data.FixedPointingInfo
+        """
         return None
 
     @property
     def slew_length_ra(self):
+        """
+        Observation slew distance in RA.
+        Will be used to define the simulation WCS extension.
+
+        Returns
+        -------
+        u.Quantity
+            slew length in RA
+        """
         return 0 * u.deg
 
     @property
     def slew_length_dec(self):
+        """
+        Observation slew distance in Dec.
+        Will be used to define the simulation WCS extension.
+
+        Returns
+        -------
+        u.Quantity
+            slew length in Dec
+        """
         return 0 * u.deg
 
     @property
     def tel_pos_center_icrs(self):
+        """
+        Telescope pointing center in equatorial (ICRS) coordinates
+
+        Returns
+        -------
+        astropy.coordinates.SkyCoord
+            pointing center
+        """
         return None
 
     def to_dict(self):
+        """
+        Converts the class definition to a configuration dict.
+
+        Returns
+        -------
+        dict:
+            Class configuration as dict
+
+        Notes
+        -----
+        See also self.from_config()
+        """
         pass
 
     def tel_pos_to_altaz(self, frame):
+        """
+        Transform ICRS telescope poiting to the specified alt/az frame.
+
+        Parameters
+        ----------
+        frame: astropy.coordinates.AltAz
+            Frame to transform the telescope pointing to.
+
+        Returns
+        -------
+        astropy.coordinates.SkyCoord
+            Telescope pointing in alt/az frame
+        """
         pass
 
     def predict(self, irf_collections, model, tel_pos_tolerance=None):
+        """
+        Creates an observation that would correspond to this run
+        given the specified IRFs and field of view model.
+
+        Parameters
+        ----------
+        irf_collections: .irf.IRFCollection
+            A collection to choose the appropriate IRF from
+        model: gammapy.modeling.models.Model
+            Field of view model
+        tel_pos_tolerance: None, list-like or u.Quantity
+            Position difference between IRFs and telescope pointing to observe
+            - None: use the closest IRF in collection
+            - u.Quantity: select IRFs within a circle of the corresponding radius
+            - list or tuple: select IRFs within the corresponding box on the sky
+            NOTE: only None option is presently implemented
+        """
         frame_tref = AltAz(
             obstime=Time(
                 (self.tstart.mjd + self.tstop.mjd) / 2,
