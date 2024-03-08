@@ -44,6 +44,13 @@ def generator(config):
                 dnde=specgen(scfg['spectral']),
                 name=scfg['name']
             )
+        elif scfg['spatial']['type'] == 'fitsmap':
+           src = FitsMapSource(
+                emission_type=scfg['emission_type'],
+                dnde=specgen(scfg['spectral']),
+                file_name=scfg['spatial']['file_name'],
+                name=scfg['name']
+            )
         elif scfg['spatial']['type'] == 'fitscube':
             src = FitsCubeSource(
                 emission_type=scfg['emission_type'],
@@ -143,6 +150,77 @@ f"""{type(self).__name__} instance
     def dndo(self, coord):
         return 1 / (4 * np.pi * u.sr)
 
+
+class FitsMapSource(Source):
+    def __init__(self, emission_type, dnde, file_name, name='fits_source'):
+        sky_map, wcs = self.read_data(file_name)
+
+        pos = wcs.pixel_to_world(0, 0)
+        super().__init__(emission_type, pos=pos, dnde=dnde, name=name)
+
+        self.file_name = file_name
+        self.sky_map = sky_map
+        self.wcs = wcs
+        self._sky_map_interpolator = self._get_sky_map_interpolator(sky_map)
+
+    def __repr__(self):
+        print(
+f"""{type(self).__name__} instance
+    {'Name':.<20s}: {self.name}
+    {'File name':.<20s}: {self.file_name}
+    {'Emission type':.<20s}: {self.emission_type}
+    {'Position':.<20s}: {self.pos}
+"""
+        )
+
+        return super().__repr__()
+
+    @classmethod
+    def read_data(cls, file_name):
+        with fits.open(file_name) as hdus:
+            wcs = WCS(hdus['primary'].header)
+
+            zero = 0
+            if 'BZERO' in hdus['primary'].header:
+                zero = hdus['primary'].header['BZERO']
+
+            scale = 1
+            if 'BSCALE' in hdus['primary'].header:
+                scale = hdus['primary'].header['BSCALE']
+
+            if 'BUNIT' in hdus['primary'].header:
+                unit = u.Unit(hdus['primary'].header['BUNIT'])
+            else:
+                # raise ValueError("No 'BUNIT' keyword in the primary extension header")
+                pixel_area = wcs.celestial.proj_plane_pixel_area()
+                n_pixels = np.prod(wcs.celestial.array_shape)
+                unit = 1 / (pixel_area * n_pixels)
+
+            sky_map = (hdus['primary'].data.transpose() - zero) * scale * unit
+
+        return sky_map, wcs
+
+    @classmethod
+    def _get_sky_map_interpolator(self, sky_map):
+        x = np.arange(sky_map.shape[0])
+        y = np.arange(sky_map.shape[1])
+
+        interp = scipy.interpolate.RegularGridInterpolator(
+            (x, y),
+            sky_map.value,
+            bounds_error = False,
+            fill_value = 0,
+        )
+
+        return interp
+
+    def sky_map_value(self, x, y):
+        val = self._sky_map_interpolator(list(zip(x.flatten(), y.flatten()))) * self.sky_map.unit
+        return val.reshape(x.shape)
+
+    def dndo(self, coord):
+        x, y = self.wcs.world_to_pixel(coord)
+        return self.sky_map_value(x, y)
 
 class FitsCubeSource(Source):
     def __init__(self, emission_type, file_name, name='fits_source'):
