@@ -147,6 +147,7 @@ f"""{type(self).__name__} instance
 class FitsCubeSource(Source):
     def __init__(self, emission_type, file_name, name='fits_source'):
         cube, wcs = self.read_data(file_name)
+        energies = self.read_energies(file_name)
 
         pos = wcs.pixel_to_world(0, 0, 0)[0]
         super().__init__(emission_type, pos=pos, dnde=None, name=name)
@@ -154,7 +155,12 @@ class FitsCubeSource(Source):
         self.file_name = file_name
         self.cube = cube
         self.wcs = wcs
+        self.energies = energies
         self._cube_interpolator = self._get_cube_interpolator(cube)
+        if energies is None:
+            self._energy_interpolator = None
+        else:
+            self._energy_interpolator = self._get_energy_interpolator(energies)
 
     def __repr__(self):
         print(
@@ -191,6 +197,18 @@ f"""{type(self).__name__} instance
         return cube, wcs
 
     @classmethod
+    def read_energies(cls, file_name):
+        with fits.open(file_name) as hdus:
+            hdu_names = [hdu.name.lower() for hdu in hdus]
+            if 'energies' in hdu_names:
+                unit = u.Unit(hdus['energies'].columns['energy'].unit)
+                energies = hdus['energies'].data['energy'] * unit
+            else:
+                energies = None
+
+        return energies
+
+    @classmethod
     def _get_cube_interpolator(self, cube):
         x = np.arange(cube.shape[0])
         y = np.arange(cube.shape[1])
@@ -205,12 +223,31 @@ f"""{type(self).__name__} instance
 
         return interp
 
+    @classmethod
+    def _get_energy_interpolator(self, energies):
+        z = np.arange(len(energies))
+        interp = scipy.interpolate.RegularGridInterpolator(
+            (energies.to('dex(MeV)').value,),
+            z,
+            bounds_error = False,
+            fill_value = -1,
+        )
+
+        return interp
+
+    def energy_to_pixel(self, energy):
+        return self._energy_interpolator(energy.to('dex(MeV)').value)
+
     def cube_value(self, x, y, z):
         val = self._cube_interpolator(list(zip(x.flatten(), y.flatten(), z.flatten()))) * self.cube.unit
         return val.reshape(x.shape)
 
     def dndedo(self, energy, coord):
         x, y, z = self.wcs.world_to_pixel(coord, energy)
+
+        if self._energy_interpolator is not None:
+            z = self.energy_to_pixel(energy.flatten()).reshape(energy.shape)
+
         return self.cube_value(x, y, z)
 
 

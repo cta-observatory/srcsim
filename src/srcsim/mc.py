@@ -1,4 +1,5 @@
 import glob
+import logging
 import numpy as np
 import pandas as pd
 import tables
@@ -141,8 +142,13 @@ f"""{type(self).__name__} instance
 
 
 class MCCollection:
-    def __init__(self, file_mask=None, samples=None):
+    def __init__(self, file_mask=None, samples=None, log=None):
         self.file_mask = file_mask
+
+        if log is None:
+            self.log = logging.getLogger(__name__)
+        else:
+            self.log = log.getChild(__name__)
 
         if samples is None:
             self.samples = self.read_files(file_mask)
@@ -236,6 +242,11 @@ f"""{type(self).__name__} instance
             )
         )
 
+        self.log.debug(
+            f"found {len(samples)} within {search_radius.to('deg'):.1f} around "
+            f"(alt,az) = ({target_position.altaz.alt.to('deg'):.2f} , {target_position.altaz.az.to('deg'):.2f})"
+        )
+
         return MCCollection(samples=samples)
 
     def get_in_box(self, target_position, max_lon_offset, max_lat_offset):
@@ -249,5 +260,11 @@ f"""{type(self).__name__} instance
             samples = tuple(sample for sample, take_it in zip(self.samples, inbox) if take_it)
         else:
             samples = ()
+
+        self.log.debug(
+            f"found {len(samples)} within "
+            f"(dlot, dlat) = ({max_lon_offset.to('deg') / 2 :.1f}, {max_lat_offset.to('deg') / 2 :.1f}) around "
+            f"(alt,az) = ({target_position.altaz.alt.to('deg'):.2f} , {target_position.altaz.az.to('deg'):.2f})"
+        )
 
         return MCCollection(samples=samples)
