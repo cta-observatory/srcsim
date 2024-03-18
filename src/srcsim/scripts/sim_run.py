@@ -7,7 +7,7 @@ import astropy.units as u
 
 from srcsim.mc import MCCollection
 from srcsim.src import generator as srcgen
-from srcsim.run import DataRun
+from srcsim.run import generator as rungen
 
 
 def main():
@@ -80,7 +80,7 @@ def main():
     print(srcs)
 
     log.info('preparing the data run')
-    run = DataRun.from_config(cfg['run'])
+    run = rungen(cfg['run'])
     print(run)
 
     log.info('starting event sampling')

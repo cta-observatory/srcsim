@@ -1,10 +1,9 @@
-import yaml
 import logging
 import numpy as np
 import pandas as pd
 import astropy.units as u
 from astropy.time import Time
-from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
+from astropy.coordinates import SkyCoord, SkyOffsetFrame, AltAz
 
 
 class DataRun:
@@ -19,47 +18,16 @@ class DataRun:
             self.log = logging.getLogger(__name__)
         else:
             self.log = log.getChild(__name__)
-        
-    def __repr__(self):
-        frame_start = AltAz(obstime=self.tstart, location=self.obsloc)
-        frame_stop = AltAz(obstime=self.tstop, location=self.obsloc)
-        print(
-f"""{type(self).__name__} instance
-    {'ID':.<20s}: {self.id}
-    {'Tel. RA/Dec':.<20s}: {self.tel_pos}
-    {'Tstart':.<20s}: {self.tstart.isot}
-    {'Tstop':.<20s}: {self.tstop.isot}
-    {'Tel. azimuth':.<20s}: [{self.tel_pos.transform_to(frame_start).az.to('deg'):.2f} - {self.tel_pos.transform_to(frame_stop).az.to('deg'):.2f}]
-    {'Tel. alt':.<20s}: [{self.tel_pos.transform_to(frame_start).alt.to('deg'):.2f} - {self.tel_pos.transform_to(frame_stop).alt.to('deg'):.2f}]
-"""
-        )
-
-        return super().__repr__() 
 
     @classmethod
     def from_config(cls, config):
-        if isinstance(config, str):
-            cfg = yaml.load(open(config, "r"), Loader=yaml.FullLoader)
-        else:
-            cfg = config
+        pass
 
-        data_run = cls(
-            SkyCoord(
-                u.Quantity(cfg['pointing']['ra']),
-                u.Quantity(cfg['pointing']['dec']),
-                frame='icrs'
-            ),
-            Time(cfg['time']['start']),
-            Time(cfg['time']['stop']),
-            EarthLocation(
-                lat=u.Quantity(cfg['location']['lat']),
-                lon=u.Quantity(cfg['location']['lon']),
-                height=u.Quantity(cfg['location']['height']),
-            ),
-            cfg['id'] if 'id' in cfg else 0
-        )
+    def to_dict(self):
+        pass
 
-        return data_run
+    def tel_pos_to_altaz(self, frame):
+        pass
 
     @classmethod
     def time_sort(cls, events):
@@ -89,21 +57,6 @@ f"""{type(self).__name__} instance
 
         return events
 
-    def to_dict(self):
-        data = {'id': self.id, 'pointing': {}, 'time': {}, 'location': {}}
-
-        data['pointing']['ra'] = str(self.tel_pos.icrs.ra.to('deg').value) + ' deg'
-        data['pointing']['dec'] = str(self.tel_pos.icrs.dec.to('deg').value) + ' deg'
-
-        data['time']['start'] = self.tstart.isot
-        data['time']['stop'] = self.tstop.isot
-
-        data['location']['lon'] = str(self.obsloc.lon.to('deg').value) + ' deg'
-        data['location']['lat'] = str(self.obsloc.lat.to('deg').value) + ' deg'
-        data['location']['height'] = str(self.obsloc.height.to('m').to_string())
-
-        return data
-
     def predict(self, mccollections, source, tel_pos_tolerance=None, time_step=1*u.minute):
         self.log.debug(f'predicting events for {source.name}')
 
@@ -119,14 +72,14 @@ f"""{type(self).__name__} instance
             tdelta = np.diff(tedges)
         else:
             tdelta = [self.tstop - self.tstart]
-        
+
         for tstart, dt in zip(tedges[:-1], tdelta):
             frame = AltAz(
                 obstime=tstart + dt/2,
                 location=self.obsloc
             )
-            tel_pos = self.tel_pos.transform_to(frame)
-        
+            tel_pos = self.tel_pos_to_altaz(frame)
+
             if tel_pos_tolerance is None:
                 mc = mccollections[source.emission_type].get_closest(tel_pos.altaz)
             elif isinstance(tel_pos_tolerance, u.Quantity):
@@ -151,7 +104,7 @@ f"""{type(self).__name__} instance
                     obstime=Time(arrival_time, format='unix'),
                     location=self.obsloc
                 )
-                current_tel_pos = self.tel_pos.transform_to(current_frame)
+                current_tel_pos = self.tel_pos_to_altaz(current_frame)
 
                 # Astropy does not pass the location / time
                 # to the offset frame, need to do this manually
@@ -172,33 +125,34 @@ f"""{type(self).__name__} instance
 
                 n_mc_events = len(sample.evt_energy)
                 n_events = np.random.poisson(weights.sum())
-                p = weights / weights.sum()
-                idx = np.random.choice(
-                    np.arange(n_mc_events),
-                    size=n_events,
-                    p=p
-                )
-
-                evt = sample.data_table.iloc[idx]
-                offset_frame = offset_frame[idx]
-                arrival_time = arrival_time[idx]
-                current_tel_pos = current_tel_pos[idx]
-
-                # Dropping the columns we're going to (re-)fill
-                evt = evt.drop(
-                    columns=['dragon_time', 'trigger_time'],
-                    errors='ignore'
-                )
-                evt = evt.drop(
-                    columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
-                    errors='ignore'
-                )
-                evt = evt.drop(
-                    columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'],
-                    errors='ignore'
-                )
 
                 if n_events > 0:
+                    p = weights / weights.sum()
+                    idx = np.random.choice(
+                        np.arange(n_mc_events),
+                        size=n_events,
+                        p=p
+                    )
+
+                    evt = sample.data_table.iloc[idx]
+                    offset_frame = offset_frame[idx]
+                    arrival_time = arrival_time[idx]
+                    current_tel_pos = current_tel_pos[idx]
+
+                    # Dropping the columns we're going to (re-)fill
+                    evt = evt.drop(
+                        columns=['dragon_time', 'trigger_time'],
+                        errors='ignore'
+                    )
+                    evt = evt.drop(
+                        columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
+                        errors='ignore'
+                    )
+                    evt = evt.drop(
+                        columns=['reco_az', 'reco_alt', 'reco_ra', 'reco_dec'],
+                        errors='ignore'
+                    )
+
                     # Events arrival time
                     evt = evt.assign(
                         dragon_time = arrival_time,
@@ -211,8 +165,8 @@ f"""{type(self).__name__} instance
                         mc_alt_tel = current_tel_pos.alt.to('rad').value,
                         az_tel = current_tel_pos.az.to('rad').value,
                         alt_tel = current_tel_pos.alt.to('rad').value,
-                        ra_tel = self.tel_pos.icrs.ra.to('rad').value,
-                        dec_tel = self.tel_pos.icrs.dec.to('rad').value
+                        ra_tel = current_tel_pos.icrs.ra.to('rad').value,
+                        dec_tel = current_tel_pos.icrs.dec.to('rad').value
                     )
 
                     # Reconstructed events coordinates
@@ -228,6 +182,7 @@ f"""{type(self).__name__} instance
                         reco_dec = reco_coords.icrs.dec.to('rad').value,
                     )
                 else:
+                    evt = sample.data_table.iloc[0:0]
                     evt = evt.assign(
                         dragon_time = np.zeros(0),
                         trigger_time = np.zeros(0),

@@ -7,7 +7,7 @@ import progressbar
 
 from srcsim.mc import MCCollection
 from srcsim.src import generator as srcgen
-from srcsim.rungen import AltAzBoxGenerator
+from srcsim.rungen.sky import AltAzBoxGenerator
 
 
 def info_message(text):
