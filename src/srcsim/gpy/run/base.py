@@ -230,7 +230,7 @@ class DataRun:
             geom,
             energy_axis_true=energy_axis_true,
             migra_axis=migra_axis,
-            name="my-dataset",
+            name="sim-dataset",
         )
 
         maker = MapDatasetMaker(
