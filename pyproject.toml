@@ -20,8 +20,8 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
-    "astropy<=6",
-    "gammapy",
+    "astropy<6",
+    "gammapy==1.1",
     "numpy>=1.21.0",
     "pandas>=1.4.1",
     "scipy<1.12",
