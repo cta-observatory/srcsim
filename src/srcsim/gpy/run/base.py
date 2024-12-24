@@ -1,6 +1,9 @@
 import astropy.units as u
+import numpy as np
+import warnings
 from astropy.time import Time
 from astropy.coordinates import AltAz
+from astropy.utils.metadata import MergeConflictWarning
 
 from gammapy.data import Observation
 from gammapy.datasets import MapDataset
@@ -272,7 +275,11 @@ class DataRun:
             events = sampler.run(ds, obs)
 
             if observation.events:
-                observation.events.stack(events)
+                with warnings.catch_warnings():
+                    # Warnings related to mergers of TSTART, TSTOP etc 
+                    # keys are expected here
+                    warnings.simplefilter("ignore", MergeConflictWarning)
+                    observation.events.stack(events)
             else:
                 observation._events = events
 
