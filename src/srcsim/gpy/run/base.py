@@ -197,22 +197,30 @@ class DataRun:
         energy_axis = MapAxis.from_energy_bounds(
             "0.03 TeV",
             "100 TeV",
-            nbin=20,
+            nbin=10,
             per_decade=True
         )
         energy_axis_true = MapAxis.from_energy_bounds(
             "0.01 TeV",
             "300 TeV",
-            nbin=20,
+            nbin=10,
             per_decade=True,
             name="energy_true"
         )
         migra_axis = MapAxis.from_bounds(
             0.5,
             2,
-            nbin=150,
+            nbin=20,
             node_type="edges",
             name="migra"
+        )
+        rad_axis = MapAxis.from_bounds(
+            0,
+            0.4,
+            nbin=40,
+            node_type="edges",
+            name="rad",
+            unit="deg"
         )
 
         geom = WcsGeom.create(
@@ -230,6 +238,8 @@ class DataRun:
             geom,
             energy_axis_true=energy_axis_true,
             migra_axis=migra_axis,
+            rad_axis=rad_axis,
+            binsz_irf=0.5*u.deg,
             name="sim-dataset",
         )
 
