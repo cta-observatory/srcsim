@@ -250,9 +250,30 @@ class DataRun:
 
         dataset.models = model
 
-        sampler = MapDatasetEventSampler(random_state=0)
-        events = sampler.run(dataset, observation)
+        time_step = 2*u.minute
+        unix_edges = np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value)
+        if unix_edges[-1] < self.tstop.unix:
+            unix_edges = np.concatenate((unix_edges, [self.tstop.unix]))
+        tedges = Time(unix_edges, format='unix')
 
-        observation._events = events
+        sampler = MapDatasetEventSampler(random_state=np.random.randint(1e5))
+        for tstart, tstop in zip(tedges[:-1], tedges[1:]):
+            obs = Observation.create(
+                pointing=self.pointing,
+                location=self.obsloc,
+                obs_id=self.id,
+                tstart=tstart,
+                tstop=tstop,
+                irfs=irfs.samples[0].to_dict()
+            )
+            obs.aeff.meta["TELESCOP"] = 'cta_north'
+            ds = maker.run(empty, obs)
+            ds.models = model
+            events = sampler.run(ds, obs)
+
+            if observation.events:
+                observation.events.stack(events)
+            else:
+                observation._events = events
 
         return observation
