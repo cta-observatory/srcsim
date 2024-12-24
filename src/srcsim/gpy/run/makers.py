@@ -37,8 +37,6 @@ class MapDatasetMaker(MapDatasetMaker):
         exposure : `~gammapy.maps.Map`
             Exposure map.
         """
-        nsteps = 100
-        
         if observation.pointing.mode == PointingMode.POINTING:
             if isinstance(observation.aeff, Map):
                 return observation.aeff.interp_to_geom(
@@ -53,6 +51,11 @@ class MapDatasetMaker(MapDatasetMaker):
             )
 
         elif observation.pointing.mode == PointingMode.DRIFT:
+            time_step = 1*u.minute
+            nsteps = int(
+                1 + np.ceil((observation.observation_time_duration / time_step).decompose())
+            )
+
             mjd_edges = np.linspace(observation.tstart.mjd, observation.tstop.mjd, num=nsteps)
             mjd = Time(
                 (mjd_edges[1:] + mjd_edges[:-1]) / 2,
@@ -104,8 +107,6 @@ class MapDatasetMaker(MapDatasetMaker):
         background : `~gammapy.maps.Map`
             Background map.
         """
-        nsteps = 100
-        
         if observation.pointing.mode == PointingMode.POINTING:
             bkg = observation.bkg
 
@@ -132,6 +133,11 @@ class MapDatasetMaker(MapDatasetMaker):
 
         elif observation.pointing.mode == PointingMode.DRIFT:
             use_region_center = getattr(self, "use_region_center", True)
+
+            time_step = 1*u.minute
+            nsteps = int(
+                1 + np.ceil((observation.observation_time_duration / time_step).decompose())
+            )
             
             mjd_edges = np.linspace(observation.tstart.mjd, observation.tstop.mjd, num=nsteps)
             mjd = Time(
