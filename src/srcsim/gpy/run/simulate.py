@@ -72,7 +72,7 @@ class MapDatasetEventSampler(MapDatasetEventSampler):
         return EventList.from_stack(events_all)
 
     @staticmethod
-    def event_list_meta(dataset, observation):
+    def event_list_meta(dataset, observation, keep_mc_id=True):
         """Event list meta info.
 
         Parameters
@@ -81,6 +81,9 @@ class MapDatasetEventSampler(MapDatasetEventSampler):
             Map dataset
         observation : `~gammapy.data.Observation`
             In memory observation
+        keep_mc_id : bool
+            Flag to tag sampled events from a given model with a Montecarlo identifier.
+            Default is True. If set to False, no identifier will be assigned.
 
         Returns
         -------
@@ -174,7 +177,8 @@ class MapDatasetEventSampler(MapDatasetEventSampler):
         meta["CONV_RA"] = 0
         meta["CONV_DEC"] = 0
 
-        meta["NMCIDS"] = len(dataset.models)
+        if keep_mc_id:
+            meta["NMCIDS"] = len(dataset.models)
 
         # Necessary for DataStore, but they should be ALT and AZ instead!
         telescope = observation.aeff.meta["TELESCOP"]
