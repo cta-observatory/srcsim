@@ -98,7 +98,6 @@ class FixedPointingDataRun(DataRun):
 
         pointing = FixedPointingInfo(
             fixed_altaz=self.tel_pos, 
-            mode=self.mode,
             location=self.obsloc
         )
         return pointing

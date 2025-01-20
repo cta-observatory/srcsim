@@ -80,7 +80,7 @@ class SkyDataRun(DataRun):
         info: gammapy.data.FixedPointingInfo
         """
 
-        return FixedPointingInfo(fixed_icrs=self.tel_pos, mode=PointingMode.POINTING)
+        return FixedPointingInfo(fixed_icrs=self.tel_pos)
 
     @property
     def tel_pos_center_icrs(self):
