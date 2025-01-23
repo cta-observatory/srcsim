@@ -69,6 +69,7 @@ def main():
     info_message(f'{len(runs)} runs generated')
 
     if args.id >= 0:
+        info_message(f'Will proccess only run {args.id}')
         runs = runs[args.id:args.id+1]
 
     info_message('Starting simulation')
