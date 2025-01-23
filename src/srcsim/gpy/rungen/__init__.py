@@ -1,3 +1,3 @@
 from .generator import generator
 from .sky import AltAzBoxGenerator, DataMatchingGenerator
-# from .fixed import FixedObsGenerator
+from .fixed import FixedObsGenerator
