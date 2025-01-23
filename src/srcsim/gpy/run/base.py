@@ -259,8 +259,8 @@ class DataRun:
             unix_edges = np.concatenate((unix_edges, [self.tstop.unix]))
         tedges = Time(unix_edges, format='unix')
 
-        sampler = MapDatasetEventSampler(random_state=np.random.randint(1e5))
         for tstart, tstop in zip(tedges[:-1], tedges[1:]):
+            sampler = MapDatasetEventSampler(random_state=np.random.randint(1e5))
             obs = Observation.create(
                 pointing=self.pointing,
                 location=self.obsloc,
