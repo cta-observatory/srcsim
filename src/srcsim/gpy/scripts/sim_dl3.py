@@ -1,4 +1,5 @@
 import os
+import gc
 import yaml
 import datetime
 import argparse
@@ -6,6 +7,7 @@ import random
 import pandas as pd
 import astropy.units as u
 
+from progressbar import ProgressBar
 from gammapy.modeling.models import Models
 
 from srcsim.gpy.irf import IRFCollection
@@ -42,6 +44,12 @@ def main():
         default="config.yaml",
         help='Configuration file to steer the code execution.'
     )
+    arg_parser.add_argument(
+        "--id",
+        default=-1,
+        type=int,
+        help='Obs ID to simulate'
+    )
     args = arg_parser.parse_args()
 
     cfg = yaml.load(open(args.config, "r"), Loader=yaml.FullLoader)
@@ -56,21 +64,29 @@ def main():
     source_models = Models.from_dict(cfg['model'])
     print(source_models)
 
-    info_message('Preparing the data run')
+    info_message('Preparing the data runs')
     runs = generator(cfg['rungen'])
-    info_message(f'{len(runs)} to be simulated')
+    info_message(f'{len(runs)} runs generated')
+
+    if args.id >= 0:
+        runs = runs[args.id:args.id+1]
 
     info_message('Starting simulation')
-    observations = [
-        run.predict(irfs, source_models, cfg['irf']['search_radius'])
-        for run in runs
-    ]
 
-    for obs in observations:
-        obs.write(
-            os.path.join(cfg['io']['out'], f'run{obs.obs_id}.fits'),
-            overwrite=True
-        )
+    with ProgressBar(max_value=len(runs), prefix="simulation: ") as progress:
+        for ri, run in enumerate(runs):
+            obs = run.predict(
+                irfs,
+                source_models,
+                cfg['irf']['search_radius']
+            )
+            obs.write(
+                os.path.join(cfg['io']['out'], f'run{obs.obs_id}.fits'),
+                overwrite=True
+            )
+            del obs
+            gc.collect()
+            progress.update(ri)
 
     info_message('Simulation complete')
 
