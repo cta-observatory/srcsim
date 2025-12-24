@@ -1,4 +1,5 @@
 import yaml
+import glob
 import datetime
 import argparse
 import pandas as pd
@@ -92,7 +93,11 @@ def main():
     events = run.time_sort(events)
     events = run.update_time_delta(events)
 
-    events.to_hdf(cfg['io']['out'] + f'run{run.id}.h5', 'dl2/event/telescope/parameters/LST_LSTCam')
+    # Write events under the key from MC files
+    _key = list(mc.keys())[0]
+    _files = glob.glob(mc[_key].file_mask)
+    events_key = MCCollection.get_events_key(_files[0])
+    events.to_hdf(cfg['io']['out'] + f'run{run.id}.h5', key=events_key)
 
     info_message('Simulation complete')
 
