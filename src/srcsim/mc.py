@@ -10,7 +10,99 @@ def power_law(e, e0, norm, index):
     return norm * (e/e0).decompose()**index
 
 
-class MCSample:
+class MCBase:
+    @classmethod
+    def _has_key(cls, file_name, key):
+        with tables.open_file(file_name) as table:
+            has_key = key in table
+
+        return has_key
+    
+    @classmethod
+    def _choose_first_valid_key(cls, file_name, keys):
+        for key in keys:
+            if cls._has_key(file_name, key):
+                return key
+
+        return None
+    
+    @classmethod
+    def get_config_key(cls, file_name):
+        keys = (
+            '/simulation/config',
+            '/simulation/run_config'
+        )
+        key = cls._choose_first_valid_key(file_name, keys)
+        return key
+    
+    @classmethod
+    def get_events_key(cls, file_name):
+        keys = (
+            '/events/parameters',
+            '/dl2/event/telescope/parameters/LST_LSTCam'
+        )
+        key = cls._choose_first_valid_key(file_name, keys)
+        return key
+
+    @classmethod
+    def read_config(cls, file_name):
+        with tables.open_file(file_name) as table:
+            cfg_table = table.root[cls.get_config_key(file_name)]
+
+            columns = {
+                'n_showers': ('num_showers',),
+                'shower_reuse': (),
+                'min_scatter_range': (),
+                'max_scatter_range': (),
+                'energy_range_min': (),
+                'energy_range_max': (),
+                'spectral_index': (),
+                'min_viewcone_radius': (),
+                'max_viewcone_radius': ()
+            }
+
+            data = {}
+
+            for col_name in columns:
+                if col_name in cfg_table.colnames:
+                    data[col_name] = [
+                        v[col_name] for v in cfg_table.iterrows()
+                    ]
+                else:
+                    for alternative in columns[col_name]:
+                        if alternative in cfg_table.colnames:
+                            data[col_name] = [
+                                v[alternative] for v in cfg_table.iterrows()
+                            ]
+                            break
+                if col_name not in data:
+                    raise RuntimeError(f"could not load config key {col_name} from '{file_name}'")
+
+            if 'obs_id' in cfg_table.colnames:
+                data['obs_id'] = [
+                    v['obs_id'] for v in cfg_table.iterrows()
+                ]
+            else:
+                evt_table = table.root[cls.get_events_key(file_name)]
+                row = next(evt_table.iterrows())
+                data['obs_id'] = [
+                    row['obs_id'] for _ in cfg_table.iterrows()
+                ]
+                print(
+                    "WARN: can not find 'obs_id' in the configuration table, "
+                    f"assuming {row['obs_id']} from the first event. "
+                    "Simulation results may be incorrect."
+                )
+
+        return pd.DataFrame(data=data)
+
+    @classmethod
+    def read_data(cls, file_name):
+        data = pd.read_hdf(file_name, cls.get_events_key(file_name))
+
+        return data
+
+
     def __init__(self, file_name=None, obs_id=None, data_table=None, config_table=None):
         self.units = dict(
             energy = u.TeV,
