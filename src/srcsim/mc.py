@@ -103,6 +103,7 @@ class MCBase:
         return data
 
 
+class MCSample(MCBase):
     def __init__(self, file_name=None, obs_id=None, data_table=None, config_table=None):
         self.units = dict(
             energy = u.TeV,
@@ -125,7 +126,8 @@ class MCBase:
             self.file_name = file_name
             self.obs_id = obs_id
             self.config_table = self.read_config(file_name, obs_id)
-            self.data_table = pd.read_hdf(file_name, 'dl2/event/telescope/parameters/LST_LSTCam').query(f'obs_id == {obs_id}')
+            self.data_table = self.read_data(file_name, obs_id)
+
 
         # Getting the telescope pointing
         pointing_data = self.data_table[['mc_az_tel', 'mc_alt_tel']].mean()
@@ -159,35 +161,16 @@ f"""{type(self).__name__} instance
         )
 
         return super().__repr__()
-    
+
     @classmethod
     def read_config(cls, file_name, obs_id):
-        with tables.open_file(file_name) as table:
-            cfg_table = table.root['/simulation/run_config']
-            obs_ids = [v['obs_id'] for v in cfg_table.iterrows()]
-
-            columns = (
-                'obs_id',
-                'num_showers',
-                'shower_reuse',
-                'min_scatter_range',
-                'max_scatter_range',
-                'energy_range_min',
-                'energy_range_max',
-                'spectral_index',
-                'min_viewcone_radius',
-                'max_viewcone_radius'
-            )
-
-            obs_idx = obs_ids.index(obs_id)
-
-            data = {}
-
-            for col_name in columns:
-                col_idx = cfg_table.colnames.index(col_name)
-                data[col_name] = (cfg_table[obs_idx][col_idx], )
-
-            return pd.DataFrame(data=data)
+        config = super().read_config(file_name)
+        return config.query(f'obs_id == {obs_id}')
+        
+    @classmethod
+    def read_data(cls, file_name, obs_id):
+        data = super().read_data(file_name)
+        return data.query(f'obs_id == {obs_id}')
 
     def get_spec_data(self, n_events, emin, emax, index=-1):
         e0 = (emin * emax)**0.5
