@@ -128,15 +128,17 @@ class MCSample(MCBase):
             self.config_table = self.read_config(file_name, obs_id)
             self.data_table = self.read_data(file_name, obs_id)
 
+        self.data_table = self._fix_format(self.data_table)
+        self.config_table = self._fix_format(self.config_table)
 
         # Getting the telescope pointing
-        pointing_data = self.data_table[['mc_az_tel', 'mc_alt_tel']].mean()
-        self.tel_pos = SkyCoord(pointing_data['mc_az_tel'], pointing_data['mc_alt_tel'], unit=self.units['angle'], frame='altaz')
+        pointing_data = self.data_table[['pointing_az', 'pointing_alt']].mean()
+        self.tel_pos = SkyCoord(pointing_data['pointing_az'], pointing_data['pointing_alt'], unit=self.units['angle'], frame='altaz')
         
         # Working out the simulation spectrum
         rmin, rmax = self.config_table[['min_scatter_range', 'max_scatter_range']].iloc[0] * self.units['distance']
         ground_area = np.pi * (rmax**2 - rmin**2)
-        nevents = self.config_table['num_showers'].iloc[0] * self.config_table['shower_reuse'].iloc[0]
+        nevents = self.config_table['n_showers'].iloc[0] * self.config_table['shower_reuse'].iloc[0]
         emin = self.config_table['energy_range_min'].iloc[0] * self.units['energy']
         emax = self.config_table['energy_range_max'].iloc[0] * self.units['energy']
         index = self.config_table['spectral_index'].iloc[0]
@@ -171,6 +173,22 @@ f"""{type(self).__name__} instance
     def read_data(cls, file_name, obs_id):
         data = super().read_data(file_name)
         return data.query(f'obs_id == {obs_id}')
+
+    def _fix_format(self, table):
+        table = table.copy()
+        old2new = dict(
+            mc_energy = 'true_energy',
+            mc_az = 'true_az',
+            mc_alt = 'true_alt',
+            mc_az_tel = 'pointing_az',
+            mc_alt_tel = 'pointing_alt',
+            num_showers = 'n_showers'
+        )
+        for key in old2new:
+            if key in table.columns:
+                table[old2new[key]] = table[key]
+
+        return table
 
     def get_spec_data(self, n_events, emin, emax, index=-1):
         e0 = (emin * emax)**0.5
