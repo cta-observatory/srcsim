@@ -279,6 +279,7 @@ f"""{type(self).__name__} instance
         return samples
 
     def get_closest(self, target_position):
+        target_position = SkyCoord(target_position.altaz.az, target_position.altaz.alt, frame='altaz')
         tel_pos = SkyCoord([sample.tel_pos for sample in self.samples])
         separation = tel_pos.separation(target_position)
         idx = separation.argmin()
@@ -286,6 +287,7 @@ f"""{type(self).__name__} instance
         return MCCollection(samples=(self.samples[idx],))
 
     def get_nearby(self, target_position, search_radius):
+        target_position = SkyCoord(target_position.altaz.az, target_position.altaz.alt, frame='altaz')
         samples = tuple(
             filter(
                 lambda sample: sample.tel_pos.separation(target_position) <= search_radius,
@@ -296,8 +298,8 @@ f"""{type(self).__name__} instance
         return MCCollection(samples=samples)
 
     def get_in_box(self, target_position, max_lon_offset, max_lat_offset):
-        tel_pos = SkyCoord([sample.tel_pos for sample in self.samples])
         target_position = SkyCoord(target_position.altaz.az, target_position.altaz.alt, frame='altaz')
+        tel_pos = SkyCoord([sample.tel_pos for sample in self.samples])
 
         lon_offset, lat_offset = tel_pos.altaz.spherical_offsets_to(target_position.altaz)
         inbox = (np.absolute(lon_offset) <= max_lon_offset) & (np.absolute(lat_offset) <= max_lat_offset)
