@@ -174,6 +174,7 @@ f"""{type(self).__name__} instance
                 offset_frame = offset_frame[idx]
                 arrival_time = arrival_time[idx]
                 current_tel_pos = current_tel_pos[idx]
+                coords = coords[idx]
 
                 # Dropping the columns we're going to (re-)fill
                 evt = evt.drop(
@@ -182,6 +183,10 @@ f"""{type(self).__name__} instance
                 )
                 evt = evt.drop(
                     columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
+                    errors='ignore'
+                )
+                evt = evt.drop(
+                    columns=['true_az', 'true_alt'],
                     errors='ignore'
                 )
                 evt = evt.drop(
@@ -204,6 +209,12 @@ f"""{type(self).__name__} instance
                         alt_tel = current_tel_pos.alt.to('rad').value,
                         ra_tel = self.tel_pos.icrs.ra.to('rad').value,
                         dec_tel = self.tel_pos.icrs.dec.to('rad').value
+                    )
+
+                    # True events coordinates
+                    evt = evt.assign(
+                        true_az = coords.altaz.az.to('rad').value,
+                        true_alt = coords.altaz.alt.to('rad').value,
                     )
 
                     # Reconstructed events coordinates
