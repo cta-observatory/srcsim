@@ -223,7 +223,7 @@ f"""{type(self).__name__} instance
         return self.dnde(energy) * self.dndo(coord)
 
 
-class MCCollection:
+class MCCollection(MCBase):
     def __init__(self, file_mask=None, samples=None):
         self.file_mask = file_mask
 
@@ -244,44 +244,15 @@ f"""{type(self).__name__} instance
 
     @classmethod
     def read_obs_ids(cls, file_name):
-        with tables.open_file(file_name, 'r') as data:
-            cfg_table = data.root['/simulation/run_config']
-            obs_ids = [v['obs_id'] for v in cfg_table.iterrows()]
+        obs_ids = cls.read_config(file_name)['obs_id'].values
 
         return obs_ids
-
-    @classmethod
-    def read_config(cls, file_name):
-        with tables.open_file(file_name) as table:
-            cfg_table = table.root['/simulation/run_config']
-
-            columns = (
-                'obs_id',
-                'num_showers',
-                'shower_reuse',
-                'min_scatter_range',
-                'max_scatter_range',
-                'energy_range_min',
-                'energy_range_max',
-                'spectral_index',
-                'min_viewcone_radius',
-                'max_viewcone_radius'
-            )
-
-            data = {}
-
-            for col_name in columns:
-                data[col_name] = [
-                    v[col_name] for v in cfg_table.iterrows()
-                ]
-
-        return pd.DataFrame(data=data)
 
     @classmethod
     def read_file(cls, file_name):
         obs_ids = cls.read_obs_ids(file_name)
 
-        data = pd.read_hdf(file_name, "dl2/event/telescope/parameters/LST_LSTCam")
+        data = cls.read_data(file_name)
         config = cls.read_config(file_name)
 
         samples = tuple(
