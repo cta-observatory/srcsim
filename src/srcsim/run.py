@@ -207,17 +207,18 @@ f"""{type(self).__name__} instance
                     )
 
                     # Reconstructed events coordinates
-                    reco_coords = SkyCoord(
-                        evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                        evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                        frame=offset_frame
-                    )
-                    evt = evt.assign(
-                        reco_az = reco_coords.altaz.az.to('rad').value,
-                        reco_alt = reco_coords.altaz.alt.to('rad').value,
-                        reco_ra = reco_coords.icrs.ra.to('rad').value,
-                        reco_dec = reco_coords.icrs.dec.to('rad').value,
-                    )
+                    if 'reco_src_x' in evt.columns:
+                        reco_coords = SkyCoord(
+                            evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                            evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
+                            frame=offset_frame
+                        )
+                        evt = evt.assign(
+                            reco_az = reco_coords.altaz.az.to('rad').value,
+                            reco_alt = reco_coords.altaz.alt.to('rad').value,
+                            reco_ra = reco_coords.icrs.ra.to('rad').value,
+                            reco_dec = reco_coords.icrs.dec.to('rad').value,
+                        )
                 else:
                     evt = evt.assign(
                         dragon_time = np.zeros(0),
@@ -231,12 +232,13 @@ f"""{type(self).__name__} instance
                         ra_tel = np.zeros(0),
                         dec_tel = np.zeros(0)
                     )
-                    evt = evt.assign(
-                        reco_az = np.zeros(0),
-                        reco_alt = np.zeros(0),
-                        reco_ra = np.zeros(0),
-                        reco_dec = np.zeros(0)
-                    )
+                    if 'reco_src_x' in evt.columns:
+                        evt = evt.assign(
+                            reco_az = np.zeros(0),
+                            reco_alt = np.zeros(0),
+                            reco_ra = np.zeros(0),
+                            reco_dec = np.zeros(0)
+                        )
 
                 events.append(evt)
 
