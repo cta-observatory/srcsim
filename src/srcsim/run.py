@@ -134,8 +134,19 @@ f"""{type(self).__name__} instance
             nsamples = len(mc.samples)
 
             for sample in mc.samples:
-                # Randomly distributing events within the time bin
-                arrival_time = np.random.uniform(tstart.unix, (tstart+dt).unix, size=len(sample.data_table))
+                # groupby.indices gives: {(obs_id, event_id): array([row indices])}
+                event_groups = sample.data_table.groupby(['obs_id', 'event_id']).indices
+
+                # event-level index
+                event_keys = list(event_groups.keys())
+                n_events_total = len(event_keys)
+
+                # Randomly distributing events within the time bin - single arrival time per event
+                arrival_time = np.random.uniform(
+                    tstart.unix,
+                    (tstart + dt).unix,
+                    size=n_events_total
+                )
 
                 # Recalculating telescope Alt/Az for the mock event arrival times
                 current_frame = AltAz(
@@ -151,24 +162,21 @@ f"""{type(self).__name__} instance
                     location=current_tel_pos.altaz.frame.location,
                     obstime=current_tel_pos.altaz.frame.obstime
                 )
+                # Row to event index mapping
+                row_to_evt = np.empty(len(sample.data_table), dtype=int)
+                for i, k in enumerate(event_keys):
+                    row_to_evt[event_groups[k]] = i
                 coords = SkyCoord(
                     sample.evt_coord.skyoffsetaltaz.lon,
                     sample.evt_coord.skyoffsetaltaz.lat,
-                    frame=offset_frame
+                    frame=offset_frame[row_to_evt]
                 )
+
                 expected_flux = source.dndedo(sample.evt_energy, coords.icrs)
                 model_flux = sample.dndedo(sample.evt_energy, sample.evt_coord)
 
-                # Per-row weights (no copy of data_table)
                 row_weights = (1 / nsamples * dt * expected_flux / model_flux).decompose().value
 
-                df = sample.data_table
-
-                # groupby.indices gives: {(obs_id, event_id): array([row indices])}
-                event_groups = df.groupby(['obs_id', 'event_id']).indices
-
-                # row_weights: NumPy array aligned with df rows
-                event_keys = list(event_groups.keys())
                 event_weights = np.fromiter(
                     (row_weights[event_groups[k]].sum() for k in event_keys),
                     dtype=float,
@@ -208,15 +216,19 @@ f"""{type(self).__name__} instance
                         rows_flat,
                         np.repeat(evt_copy_counts, rows_per_event)
                     )
+                    evt_indices = np.repeat(
+                        evt_indices,
+                        evt_copy_counts * rows_per_event
+                    )
                     event_copy_id = np.concatenate([
                         np.repeat(np.arange(n), rows_per_event[i])
                         for i, n in enumerate(evt_copy_counts)
                     ])
 
                     evt = df.iloc[row_idx].assign(event_copy_id=event_copy_id)
-                    offset_frame = offset_frame[row_idx]
-                    arrival_time = arrival_time[row_idx]
-                    current_tel_pos = current_tel_pos[row_idx]
+                    offset_frame = offset_frame[evt_indices]
+                    arrival_time = arrival_time[evt_indices]
+                    current_tel_pos = current_tel_pos[evt_indices]
                     coords = coords[row_idx]
 
                 else:
