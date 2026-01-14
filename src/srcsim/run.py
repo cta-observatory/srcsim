@@ -225,7 +225,7 @@ f"""{type(self).__name__} instance
                         for i, n in enumerate(evt_copy_counts)
                     ])
 
-                    evt = df.iloc[row_idx].assign(event_copy_id=event_copy_id)
+                    evt = sample.data_table.iloc[row_idx].assign(event_copy_id=event_copy_id)
                     offset_frame = offset_frame[evt_indices]
                     arrival_time = arrival_time[evt_indices]
                     current_tel_pos = current_tel_pos[evt_indices]
@@ -233,7 +233,7 @@ f"""{type(self).__name__} instance
 
                 else:
                     # Empty but schema-consistent
-                    evt = df.iloc[0:0].assign(event_copy_id=np.zeros(0, dtype=int))
+                    evt = sample.data_table.iloc[0:0].assign(event_copy_id=np.zeros(0, dtype=int))
                     offset_frame = offset_frame[0:0]
                     arrival_time = arrival_time[0:0]
                     current_tel_pos = current_tel_pos[0:0]
