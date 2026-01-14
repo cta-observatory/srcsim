@@ -159,22 +159,73 @@ f"""{type(self).__name__} instance
                 expected_flux = source.dndedo(sample.evt_energy, coords.icrs)
                 model_flux = sample.dndedo(sample.evt_energy, sample.evt_coord)
 
-                weights = (1 / nsamples * dt * expected_flux / model_flux).decompose()
+                # Per-row weights (no copy of data_table)
+                row_weights = (1 / nsamples * dt * expected_flux / model_flux).decompose().value
 
-                n_mc_events = len(sample.evt_energy)
-                n_events = np.random.poisson(weights.sum())
-                p = weights / weights.sum()
-                idx = np.random.choice(
-                    np.arange(n_mc_events),
-                    size=n_events,
-                    p=p
+                df = sample.data_table
+
+                # groupby.indices gives: {(obs_id, event_id): array([row indices])}
+                event_groups = df.groupby(['obs_id', 'event_id']).indices
+
+                # row_weights: NumPy array aligned with df rows
+                event_keys = list(event_groups.keys())
+                event_weights = np.fromiter(
+                    (row_weights[event_groups[k]].sum() for k in event_keys),
+                    dtype=float,
+                    count=len(event_keys)
                 )
 
-                evt = sample.data_table.iloc[idx]
-                offset_frame = offset_frame[idx]
-                arrival_time = arrival_time[idx]
-                current_tel_pos = current_tel_pos[idx]
-                coords = coords[idx]
+                # Poisson draw
+                n_events = np.random.poisson(event_weights.sum())
+
+                if n_events > 0:
+                    p = event_weights / event_weights.sum()
+
+                    # Sample events
+                    idx_evt = np.random.choice(
+                        np.arange(len(event_keys)),
+                        size=n_events,
+                        p=p
+                    )
+
+                    # Count copies per event
+                    copy_counts = {}
+                    for i in idx_evt:
+                        copy_counts[i] = copy_counts.get(i, 0) + 1
+                    
+                    evt_indices, evt_copy_counts = np.unique(idx_evt, return_counts=True)
+                    rows_per_event = np.fromiter(
+                        (len(event_groups[event_keys[i]]) for i in evt_indices),
+                        dtype=int,
+                        count=len(evt_indices)
+                    )
+                    # Concatenate row indices per event
+                    rows_flat = np.concatenate(
+                        [event_groups[event_keys[i]] for i in evt_indices]
+                    )
+                    # Repeat each event's rows according to copy count
+                    row_idx = np.repeat(
+                        rows_flat,
+                        np.repeat(evt_copy_counts, rows_per_event)
+                    )
+                    event_copy_id = np.concatenate([
+                        np.repeat(np.arange(n), rows_per_event[i])
+                        for i, n in enumerate(evt_copy_counts)
+                    ])
+
+                    evt = df.iloc[row_idx].assign(event_copy_id=event_copy_id)
+                    offset_frame = offset_frame[row_idx]
+                    arrival_time = arrival_time[row_idx]
+                    current_tel_pos = current_tel_pos[row_idx]
+                    coords = coords[row_idx]
+
+                else:
+                    # Empty but schema-consistent
+                    evt = df.iloc[0:0].assign(event_copy_id=np.zeros(0, dtype=int))
+                    offset_frame = offset_frame[0:0]
+                    arrival_time = arrival_time[0:0]
+                    current_tel_pos = current_tel_pos[0:0]
+                    coords = coords[0:0]
 
                 # Dropping the columns we're going to (re-)fill
                 evt = evt.drop(
