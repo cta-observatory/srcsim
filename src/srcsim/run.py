@@ -231,6 +231,15 @@ f"""{type(self).__name__} instance
                     current_tel_pos = current_tel_pos[evt_indices]
                     coords = coords[row_idx]
 
+                    # Randomly scatter arrival times of the repeated (i.e. identical) events
+                    scale = 100e-6  # seconds
+                    arrival_time += np.concatenate([
+                        np.tile(
+                            np.random.normal(scale=scale*np.arange(n)),
+                            rows_per_event[i]
+                        )
+                        for i, n in enumerate(evt_copy_counts)
+                    ])
                 else:
                     # Empty but schema-consistent
                     evt = sample.data_table.iloc[0:0].assign(event_copy_id=np.zeros(0, dtype=int))
