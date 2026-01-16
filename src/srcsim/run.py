@@ -221,7 +221,7 @@ f"""{type(self).__name__} instance
                         evt_copy_counts * rows_per_event
                     )
                     event_copy_id = np.concatenate([
-                        np.repeat(np.arange(n), rows_per_event[i])
+                        np.tile(np.arange(n), rows_per_event[i])
                         for i, n in enumerate(evt_copy_counts)
                     ])
 
