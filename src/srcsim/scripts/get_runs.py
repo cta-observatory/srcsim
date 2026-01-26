@@ -1,26 +1,8 @@
 import yaml
-import datetime
 import argparse
+import logging
 
 from srcsim.rungen import generator as rungen
-
-
-def info_message(text):
-    """
-    This function prints the specified text with the prefix of the current date
-
-    Parameters
-    ----------
-    text: str
-
-    Returns
-    -------
-    None
-
-    """
-
-    date_str = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    print("{date:s}: {message:s}".format(date=date_str, message=text))
 
 
 def main():
@@ -35,11 +17,29 @@ def main():
         default="config.yaml",
         help='Configuration file to steer the code execution.'
     )
+    arg_parser.add_argument(
+        '-v',
+        "--verbose",
+        action='store_true',
+        help='extra verbosity'
+    )
     args = arg_parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s %(name)-10s : %(levelname)-8s %(message)s',
+        datefmt='%Y-%m-%dT%H:%M:%S',
+    )
+
+    log = logging.getLogger(__name__)
+
+    if args.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     cfg = yaml.load(open(args.config, "r"), Loader=yaml.FullLoader)
 
-    info_message('Preparing data runs')
+    log.info('Preparing data runs')
     runs = rungen(cfg['rungen'])
 
     for run_id, run in enumerate(runs):
@@ -55,7 +55,7 @@ def main():
         with open(output_name, 'w') as output:
             yaml.dump(run_cfg, output)
 
-    info_message('Generation complete')
+    log.info('Generation complete')
 
 
 if __name__ == '__main__':

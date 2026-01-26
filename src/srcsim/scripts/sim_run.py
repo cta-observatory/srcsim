@@ -1,6 +1,6 @@
 import yaml
-import datetime
 import argparse
+import logging
 import random
 import pandas as pd
 import astropy.units as u
@@ -8,24 +8,6 @@ import astropy.units as u
 from srcsim.mc import MCCollection
 from srcsim.src import generator as srcgen
 from srcsim.run import DataRun
-
-
-def info_message(text):
-    """
-    This function prints the specified text with the prefix of the current date
-
-    Parameters
-    ----------
-    text: str
-
-    Returns
-    -------
-    None
-
-    """
-
-    date_str = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-    print("{date:s}: {message:s}".format(date=date_str, message=text))
 
 
 def main():
@@ -40,11 +22,29 @@ def main():
         default="config.yaml",
         help='Configuration file to steer the code execution.'
     )
+    arg_parser.add_argument(
+        '-v',
+        "--verbose",
+        action='store_true',
+        help='extra verbosity'
+    )
     args = arg_parser.parse_args()
+
+    logging.basicConfig(
+        format='%(asctime)s %(name)-10s : %(levelname)-8s %(message)s',
+        datefmt='%Y-%m-%dT%H:%M:%S',
+    )
+
+    log = logging.getLogger(__name__)
+
+    if args.verbose:
+        log.setLevel(logging.DEBUG)
+    else:
+        log.setLevel(logging.INFO)
 
     cfg = yaml.load(open(args.config, "r"), Loader=yaml.FullLoader)
 
-    info_message('Loading MCs')
+    log.info('loading MCs')
     mc = {
         emission_type: MCCollection(cfg['mc'][emission_type]['files'])
         for emission_type in cfg['mc']
@@ -75,15 +75,15 @@ def main():
                 
     cfg['sampling']['time_step'] = u.Quantity(cfg['sampling']['time_step'])
 
-    info_message('Preparing sources')
+    log.info('preparing sources')
     srcs = srcgen(cfg['sources'])
     print(srcs)
 
-    info_message('Preparing the data run')
+    log.info('preparing the data run')
     run = DataRun.from_config(cfg['run'])
     print(run)
 
-    info_message('Starting event sampling')
+    log.info('starting event sampling')
     evt = [
         run.predict(
             mc,
@@ -100,7 +100,7 @@ def main():
 
     events.to_hdf(cfg['io']['out'] + f'run{run.id}.h5', 'dl2/event/telescope/parameters/LST_LSTCam')
 
-    info_message('Simulation complete')
+    log.info('simulation complete')
 
 
 if __name__ == '__main__':
