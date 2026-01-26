@@ -7,6 +7,12 @@ from astropy.coordinates import SkyCoord
 
 
 class OffSample:
+    # Effective focal lengths
+    camscale = {
+        1: 1 / 29.30565 * u.Unit('rad/m'),
+        5: 1 / 18.2121 * u.Unit('rad/m'),
+    }
+
     def __init__(self, file_name=None, obs_id=None, data_table=None):
         self.units = dict(
             energy = u.TeV,
@@ -43,7 +49,7 @@ class OffSample:
             unit=self.units['angle'],
             frame='altaz'
         )
-        cam_x, cam_y = self.data_table[['reco_src_x', 'reco_src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle
+        cam_x, cam_y = self.data_table[['reco_src_x', 'reco_src_y']].to_numpy().transpose() * self.units['distance'] * self.cam2angle(self.data_table['tel_id'].tolist())
         self.evt_coord = SkyCoord(cam_x, cam_y, frame=tel_pos.skyoffset_frame())
         self.evt_energy = self.data_table['reco_energy'].to_numpy() * self.units['energy']
         
@@ -71,6 +77,14 @@ f"""{type(self).__name__} instance
         t_elapsed = u.d * np.sum(time_diff[time_diff < time_diff_max])
 
         return t_elapsed
+
+    def cam2angle(self, tel_id):
+        cam2angle = u.Quantity(
+            list(
+                map(lambda idx: self.camscale[idx], tel_id)
+            )
+        )
+        return cam2angle
 
     def dndedo(self, energy, coord):
         dummy = 1 + 0 * energy.value
