@@ -1,4 +1,5 @@
 import yaml
+import logging
 import numpy as np
 import pandas as pd
 import astropy.units as u
@@ -7,12 +8,17 @@ from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
 
 
 class DataRun:
-    def __init__(self, tel_pos, tstart, tstop, obsloc, id=0):
+    def __init__(self, tel_pos, tstart, tstop, obsloc, id=0, log=None):
         self.id = id
         self.tel_pos = tel_pos
         self.obsloc = obsloc
         self.tstart = tstart
         self.tstop = tstop
+
+        if log is None:
+            self.log = logging.getLogger(__name__)
+        else:
+            self.log = log.getChild(__name__)
         
     def __repr__(self):
         frame_start = AltAz(obstime=self.tstart, location=self.obsloc)
@@ -67,10 +73,11 @@ f"""{type(self).__name__} instance
         event_time = events['trigger_time'].to_numpy()
         delta_time = np.zeros_like(event_time)
 
-        argsorted = event_time.argsort()
-        dt = np.diff(event_time[argsorted])
-        delta_time[argsorted[:-1]] = dt
-        delta_time[argsorted[-1]] = dt[-1]
+        if len(event_time) > 0:
+            argsorted = event_time.argsort()
+            dt = np.diff(event_time[argsorted])
+            delta_time[argsorted[:-1]] = dt
+            delta_time[argsorted[-1]] = dt[-1]
 
         events = events.drop(
             columns=['delta_t'],
@@ -98,6 +105,8 @@ f"""{type(self).__name__} instance
         return data
 
     def predict(self, mccollections, source, tel_pos_tolerance=None, time_step=1*u.minute):
+        self.log.debug(f'predicting events for {source.name}')
+
         events = []
 
         unix_edges = np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value)
@@ -322,6 +331,11 @@ f"""{type(self).__name__} instance
                             reco_ra = np.zeros(0),
                             reco_dec = np.zeros(0)
                         )
+
+                evt = evt.drop('mc_src_name', errors='ignore')
+                evt = evt.assign(
+                    mc_src_name = np.repeat(source.name, len(evt))
+                )
 
                 evt = evt.drop('mc_src_name', errors='ignore')
                 evt = evt.assign(

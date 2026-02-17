@@ -1,4 +1,5 @@
 import glob
+import logging
 import numpy as np
 import pandas as pd
 import tables
@@ -151,7 +152,16 @@ class MCSample(MCBase):
         self.evt_coord = self.evt_coord.transform_to(self.tel_pos.skyoffset_frame())
 
         self.evt_energy = self.data_table['true_energy'].to_numpy() * self.units['energy']
-    
+
+        # Filtering out events with excessive offsets (e.g. due to the simulation numerical accuracy)
+        offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0] * self.units['viewcone']
+        evt_offset = self.evt_coord.separation(self.tel_pos)
+
+        in_fov = (evt_offset >= offset_min) & (evt_offset <= offset_max)
+        self.data_table = self.data_table[in_fov]
+        self.evt_coord = self.evt_coord[in_fov]
+        self.evt_energy = self.evt_energy[in_fov]
+        
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
@@ -227,8 +237,13 @@ f"""{type(self).__name__} instance
 
 
 class MCCollection(MCBase):
-    def __init__(self, file_mask=None, samples=None):
+    def __init__(self, file_mask=None, samples=None, log=None):
         self.file_mask = file_mask
+
+        if log is None:
+            self.log = logging.getLogger(__name__)
+        else:
+            self.log = log.getChild(__name__)
 
         if samples is None:
             self.samples = self.read_files(file_mask)
@@ -295,6 +310,11 @@ f"""{type(self).__name__} instance
             )
         )
 
+        self.log.debug(
+            f"found {len(samples)} within {search_radius.to('deg'):.1f} around "
+            f"(alt,az) = ({target_position.altaz.alt.to('deg'):.2f} , {target_position.altaz.az.to('deg'):.2f})"
+        )
+
         return MCCollection(samples=samples)
 
     def get_in_box(self, target_position, max_lon_offset, max_lat_offset):
@@ -308,5 +328,11 @@ f"""{type(self).__name__} instance
             samples = tuple(sample for sample, take_it in zip(self.samples, inbox) if take_it)
         else:
             samples = ()
+
+        self.log.debug(
+            f"found {len(samples)} within "
+            f"(dlot, dlat) = ({max_lon_offset.to('deg') / 2 :.1f}, {max_lat_offset.to('deg') / 2 :.1f}) around "
+            f"(alt,az) = ({target_position.altaz.alt.to('deg'):.2f} , {target_position.altaz.az.to('deg'):.2f})"
+        )
 
         return MCCollection(samples=samples)
