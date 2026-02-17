@@ -40,6 +40,7 @@ class MCBase:
     def get_events_key(cls, file_name):
         keys = (
             '/events/parameters',
+            '/dl1/event/telescope/parameters/LST_LSTCam',
             '/dl2/event/telescope/parameters/LST_LSTCam'
         )
         key = cls._choose_first_valid_key(file_name, keys)
