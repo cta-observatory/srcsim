@@ -155,7 +155,7 @@ class MCSample(MCBase):
         self.evt_energy = self.data_table['true_energy'].to_numpy() * self.units['energy']
 
         # Filtering out events with excessive offsets (e.g. due to the simulation numerical accuracy)
-        offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0] * self.units['viewcone']
+        offset_min, offset_max = self.config_table[['min_viewcone_radius', 'max_viewcone_radius']].iloc[0].values * self.units['viewcone']
         evt_offset = self.evt_coord.separation(self.tel_pos)
 
         in_fov = (evt_offset >= offset_min) & (evt_offset <= offset_max)
