@@ -3,7 +3,7 @@ import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord
 
-from .base import SampleBase
+from .sample import SampleBase
 
 
 class OffSample(SampleBase):

@@ -3,7 +3,7 @@ import astropy.units as u
 from astropy.coordinates import SkyCoord
 
 
-from .base import MCSampleBase
+from .sample import MCSampleBase
 
 
 def power_law(e, e0, norm, index):
