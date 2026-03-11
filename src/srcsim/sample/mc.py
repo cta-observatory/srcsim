@@ -22,7 +22,7 @@ class MCSample(MCSampleBase):
         # TODO: refine the logic below / implement nicer
         if data_table is not None and config_table is not None:
             self.file_name = None
-            self.obs_id = config_table['obs_id'].iloc[0]
+            self.obs_id = int(config_table['obs_id'].iloc[0])
             self.config_table = config_table
             self.data_table = data_table
         else:
