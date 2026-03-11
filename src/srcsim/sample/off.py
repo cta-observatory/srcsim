@@ -4,6 +4,7 @@ from astropy.time import Time
 from astropy.coordinates import SkyCoord
 
 from .sample import SampleBase
+from .collection import CollectionBase
 
 
 class OffSample(SampleBase):
@@ -71,3 +72,20 @@ f"""{type(self).__name__} instance
         dummy = 1 + 0 * energy.value
         val = dummy * 1 / (1 / self.obs_duration * u.Unit('1/(s TeV sr)'))
         return val
+
+
+class OffCollection(CollectionBase):
+    @classmethod
+    def read_file(cls, file_name):
+        data = SampleBase.read_data(file_name)
+        obs_ids = np.unique(data['obs_id'].to_numpy())
+
+        samples = tuple(
+            OffSample(
+                data_table = data.query(f'obs_id == {obs_id}'),
+                obs_id = int(obs_id)
+            )
+            for obs_id in obs_ids
+        )
+
+        return samples

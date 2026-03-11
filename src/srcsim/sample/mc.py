@@ -4,6 +4,7 @@ from astropy.coordinates import SkyCoord
 
 
 from .sample import MCSampleBase
+from .collection import CollectionBase
 
 
 def power_law(e, e0, norm, index):
@@ -136,3 +137,22 @@ f"""{type(self).__name__} instance
 
     def dndedo(self, energy, coord):
         return self.dnde(energy) * self.dndo(coord)
+
+
+class MCCollection(CollectionBase):
+    @classmethod
+    def read_file(cls, file_name):
+        data = MCSampleBase.read_data(file_name)
+        config = MCSampleBase.read_config(file_name)
+
+        obs_ids = np.unique(config['obs_id'].to_numpy())
+
+        samples = tuple(
+            MCSample(
+                config_table = config.query(f'obs_id == {obs_id}'),
+                data_table = data.query(f'obs_id == {obs_id}')
+            )
+            for obs_id in obs_ids
+        )
+
+        return samples
