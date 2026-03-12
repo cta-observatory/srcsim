@@ -9,7 +9,7 @@ def generator(config):
     else:
         cfg = config
 
-    for par in ('norm', 'index', 'ecut', 'beta'):
+    for par in ('norm', 'e0', 'index', 'ecut', 'ebr', 'beta'):
         if par in cfg:
             cfg[par] = u.Quantity(cfg[par])
 

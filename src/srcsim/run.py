@@ -5,6 +5,7 @@ import pandas as pd
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
+from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 
 
 class DataRun:
@@ -107,6 +108,8 @@ f"""{type(self).__name__} instance
     def predict(self, mccollections, source, tel_pos_tolerance=None, time_step=1*u.minute):
         self.log.debug(f'predicting events for {source.name}')
 
+        erfa_astrom.set(ErfaAstromInterpolator(300 * u.s))
+
         events = []
 
         unix_edges = np.arange(self.tstart.unix, self.tstop.unix, step=time_step.to('s').value)
@@ -143,8 +146,19 @@ f"""{type(self).__name__} instance
             nsamples = len(mc.samples)
 
             for sample in mc.samples:
-                # Randomly distributing events within the time bin
-                arrival_time = np.random.uniform(tstart.unix, (tstart+dt).unix, size=len(sample.data_table))
+                # groupby.indices gives: {(obs_id, event_id): array([row indices])}
+                event_groups = sample.data_table.groupby(['obs_id', 'event_id']).indices
+
+                # event-level index
+                event_keys = list(event_groups.keys())
+                n_events_total = len(event_keys)
+
+                # Randomly distributing events within the time bin - single arrival time per event
+                arrival_time = np.random.uniform(
+                    tstart.unix,
+                    (tstart + dt).unix,
+                    size=n_events_total
+                )
 
                 # Recalculating telescope Alt/Az for the mock event arrival times
                 current_frame = AltAz(
@@ -160,29 +174,91 @@ f"""{type(self).__name__} instance
                     location=current_tel_pos.altaz.frame.location,
                     obstime=current_tel_pos.altaz.frame.obstime
                 )
+                # Row to event index mapping
+                row_to_evt = np.empty(len(sample.data_table), dtype=int)
+                for i, k in enumerate(event_keys):
+                    row_to_evt[event_groups[k]] = i
                 coords = SkyCoord(
                     sample.evt_coord.skyoffsetaltaz.lon,
                     sample.evt_coord.skyoffsetaltaz.lat,
-                    frame=offset_frame
+                    frame=offset_frame[row_to_evt]
                 )
+
                 expected_flux = source.dndedo(sample.evt_energy, coords.icrs)
                 model_flux = sample.dndedo(sample.evt_energy, sample.evt_coord)
 
-                weights = (1 / nsamples * dt * expected_flux / model_flux).decompose()
+                row_weights = (1 / nsamples * dt * expected_flux / model_flux).decompose().value
 
-                n_mc_events = len(sample.evt_energy)
-                n_events = np.random.poisson(weights.sum())
-                p = weights / weights.sum()
-                idx = np.random.choice(
-                    np.arange(n_mc_events),
-                    size=n_events,
-                    p=p
+                event_weights = np.fromiter(
+                    (row_weights[event_groups[k]].sum() for k in event_keys),
+                    dtype=float,
+                    count=len(event_keys)
                 )
 
-                evt = sample.data_table.iloc[idx]
-                offset_frame = offset_frame[idx]
-                arrival_time = arrival_time[idx]
-                current_tel_pos = current_tel_pos[idx]
+                # Poisson draw
+                n_events = np.random.poisson(event_weights.sum())
+
+                if n_events > 0:
+                    p = event_weights / event_weights.sum()
+
+                    # Sample events
+                    idx_evt = np.random.choice(
+                        np.arange(len(event_keys)),
+                        size=n_events,
+                        p=p
+                    )
+
+                    # Count copies per event
+                    copy_counts = {}
+                    for i in idx_evt:
+                        copy_counts[i] = copy_counts.get(i, 0) + 1
+                    
+                    evt_indices, evt_copy_counts = np.unique(idx_evt, return_counts=True)
+                    rows_per_event = np.fromiter(
+                        (len(event_groups[event_keys[i]]) for i in evt_indices),
+                        dtype=int,
+                        count=len(evt_indices)
+                    )
+                    # Concatenate row indices per event
+                    rows_flat = np.concatenate(
+                        [event_groups[event_keys[i]] for i in evt_indices]
+                    )
+                    # Repeat each event's rows according to copy count
+                    row_idx = np.repeat(
+                        rows_flat,
+                        np.repeat(evt_copy_counts, rows_per_event)
+                    )
+                    evt_indices = np.repeat(
+                        evt_indices,
+                        evt_copy_counts * rows_per_event
+                    )
+                    event_copy_id = np.concatenate([
+                        np.tile(np.arange(n), rows_per_event[i])
+                        for i, n in enumerate(evt_copy_counts)
+                    ])
+
+                    evt = sample.data_table.iloc[row_idx].assign(event_copy_id=event_copy_id)
+                    offset_frame = offset_frame[evt_indices]
+                    arrival_time = arrival_time[evt_indices]
+                    current_tel_pos = current_tel_pos[evt_indices]
+                    coords = coords[row_idx]
+
+                    # Randomly scatter arrival times of the repeated (i.e. identical) events
+                    scale = 100e-6  # seconds
+                    arrival_time += np.concatenate([
+                        np.tile(
+                            np.random.normal(scale=scale*np.arange(n)),
+                            rows_per_event[i]
+                        )
+                        for i, n in enumerate(evt_copy_counts)
+                    ])
+                else:
+                    # Empty but schema-consistent
+                    evt = sample.data_table.iloc[0:0].assign(event_copy_id=np.zeros(0, dtype=int))
+                    offset_frame = offset_frame[0:0]
+                    arrival_time = arrival_time[0:0]
+                    current_tel_pos = current_tel_pos[0:0]
+                    coords = coords[0:0]
 
                 # Dropping the columns we're going to (re-)fill
                 evt = evt.drop(
@@ -191,6 +267,10 @@ f"""{type(self).__name__} instance
                 )
                 evt = evt.drop(
                     columns=['mc_az_tel', 'mc_alt_tel', 'az_tel', 'alt_tel', 'ra_tel', 'dec_tel'],
+                    errors='ignore'
+                )
+                evt = evt.drop(
+                    columns=['true_az', 'true_alt'],
                     errors='ignore'
                 )
                 evt = evt.drop(
@@ -215,18 +295,38 @@ f"""{type(self).__name__} instance
                         dec_tel = self.tel_pos.icrs.dec.to('rad').value
                     )
 
-                    # Reconstructed events coordinates
-                    reco_coords = SkyCoord(
-                        evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                        evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                        frame=offset_frame
-                    )
+                    # True events coordinates
                     evt = evt.assign(
-                        reco_az = reco_coords.altaz.az.to('rad').value,
-                        reco_alt = reco_coords.altaz.alt.to('rad').value,
-                        reco_ra = reco_coords.icrs.ra.to('rad').value,
-                        reco_dec = reco_coords.icrs.dec.to('rad').value,
+                        true_az = coords.altaz.az.to('rad').value,
+                        true_alt = coords.altaz.alt.to('rad').value,
                     )
+
+                    # Reconstructed events coordinates
+                    if 'reco_alt' in evt.columns:
+                        _reco_in_offset_frame = SkyCoord(
+                            evt['reco_az'].to_numpy(),
+                            evt['reco_alt'].to_numpy(),
+                            unit=sample.units['angle'],
+                            frame='altaz'
+                        ).transform_to(
+                            sample.tel_pos.skyoffset_frame()
+                        )
+                        reco_coords = SkyCoord(
+                            _reco_in_offset_frame.lon,
+                            _reco_in_offset_frame.lat,
+                            evt['reco_alt'].to_numpy(),
+                            unit=sample.units['angle'],
+                            frame=AltAz(
+                                location=current_tel_pos.altaz.frame.location,
+                                obstime=current_tel_pos.altaz.frame.obstime
+                            )
+                        )
+                        evt = evt.assign(
+                            reco_az = reco_coords.altaz.az.to('rad').value,
+                            reco_alt = reco_coords.altaz.alt.to('rad').value,
+                            reco_ra = reco_coords.icrs.ra.to('rad').value,
+                            reco_dec = reco_coords.icrs.dec.to('rad').value,
+                        )
                 else:
                     evt = evt.assign(
                         dragon_time = np.zeros(0),
@@ -240,12 +340,18 @@ f"""{type(self).__name__} instance
                         ra_tel = np.zeros(0),
                         dec_tel = np.zeros(0)
                     )
-                    evt = evt.assign(
-                        reco_az = np.zeros(0),
-                        reco_alt = np.zeros(0),
-                        reco_ra = np.zeros(0),
-                        reco_dec = np.zeros(0)
-                    )
+                    if 'reco_alt' in evt.columns:
+                        evt = evt.assign(
+                            reco_az = np.zeros(0),
+                            reco_alt = np.zeros(0),
+                            reco_ra = np.zeros(0),
+                            reco_dec = np.zeros(0)
+                        )
+
+                evt = evt.drop('mc_src_name', errors='ignore')
+                evt = evt.assign(
+                    mc_src_name = np.repeat(source.name, len(evt))
+                )
 
                 evt = evt.drop('mc_src_name', errors='ignore')
                 evt = evt.assign(
