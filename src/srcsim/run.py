@@ -299,11 +299,24 @@ f"""{type(self).__name__} instance
                     )
 
                     # Reconstructed events coordinates
-                    if 'reco_src_x' in evt.columns:
+                    if 'reco_alt' in evt.columns:
+                        _reco_in_offset_frame = SkyCoord(
+                            evt['reco_az'].to_numpy(),
+                            evt['reco_alt'].to_numpy(),
+                            unit=sample.units['angle'],
+                            frame='altaz'
+                        ).transform_to(
+                            sample.tel_pos.skyoffset_frame()
+                        )
                         reco_coords = SkyCoord(
-                            evt['reco_src_x'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                            evt['reco_src_y'].to_numpy() * sample.units['distance'] * sample.cam2angle,
-                            frame=offset_frame
+                            _reco_in_offset_frame.lon,
+                            _reco_in_offset_frame.lat,
+                            evt['reco_alt'].to_numpy(),
+                            unit=sample.units['angle'],
+                            frame=AltAz(
+                                location=current_tel_pos.altaz.frame.location,
+                                obstime=current_tel_pos.altaz.frame.obstime
+                            )
                         )
                         evt = evt.assign(
                             reco_az = reco_coords.altaz.az.to('rad').value,
@@ -324,7 +337,7 @@ f"""{type(self).__name__} instance
                         ra_tel = np.zeros(0),
                         dec_tel = np.zeros(0)
                     )
-                    if 'reco_src_x' in evt.columns:
+                    if 'reco_alt' in evt.columns:
                         evt = evt.assign(
                             reco_az = np.zeros(0),
                             reco_alt = np.zeros(0),
