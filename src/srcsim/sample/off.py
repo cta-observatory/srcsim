@@ -30,7 +30,7 @@ class OffSample(SampleBase):
         self.n_events = len(self.data_table)
         self.obs_duration = self.calc_obs_duration(self.data_table)
 
-        self.tel_pos = SkyCoord(
+        tel_pos = SkyCoord(
             self.data_table['az_tel'].to_numpy(),
             self.data_table['alt_tel'].to_numpy(),
             unit=self.units['angle'],
@@ -39,16 +39,22 @@ class OffSample(SampleBase):
 
         alt, az = self.data_table[['reco_alt', 'reco_az']].to_numpy().transpose()
         self.evt_coord = SkyCoord(az, alt, frame='altaz', unit=self.units['angle'])
-        self.evt_coord = self.evt_coord.transform_to(self.tel_pos.skyoffset_frame())
+        self.evt_coord = self.evt_coord.transform_to(tel_pos.skyoffset_frame())
         self.evt_energy = self.data_table['reco_energy'].to_numpy() * self.units['energy']
+
+        self.tel_pos = SkyCoord(
+            self.data_table['az_tel'].to_numpy().mean(),
+            self.data_table['alt_tel'].to_numpy().mean(),
+            unit=self.units['angle'],
+            frame='altaz'
+        )
         
     def __repr__(self):
         print(
 f"""{type(self).__name__} instance
     {'File name':.<20s}: {self.file_name}
     {'Obs ID':.<20s}: {self.obs_id}
-    {'Pointing azimuth':.<20s}: [{self.tel_pos.az.min().to('deg'):.2f} - {self.tel_pos.az.max().to('deg'):.2f}]
-    {'Pointing altitude':.<20s}: [{self.tel_pos.alt.min().to('deg'):.2f} - {self.tel_pos.alt.max().to('deg'):.2f}]
+    {'Pointing':.<20s}: {self.tel_pos}
     {'N events':.<20s}: {self.n_events}
     {'Obs. duration':.<20s}: {self.obs_duration.to('min')}
 """
