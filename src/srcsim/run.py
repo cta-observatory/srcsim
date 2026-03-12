@@ -5,6 +5,7 @@ import pandas as pd
 import astropy.units as u
 from astropy.time import Time
 from astropy.coordinates import SkyCoord, SkyOffsetFrame, EarthLocation, AltAz
+from astropy.coordinates.erfa_astrom import erfa_astrom, ErfaAstromInterpolator
 
 
 class DataRun:
@@ -106,6 +107,8 @@ f"""{type(self).__name__} instance
 
     def predict(self, mccollections, source, tel_pos_tolerance=None, time_step=1*u.minute):
         self.log.debug(f'predicting events for {source.name}')
+
+        erfa_astrom.set(ErfaAstromInterpolator(300 * u.s))
 
         events = []
 
