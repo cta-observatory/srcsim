@@ -6,7 +6,8 @@ import random
 import pandas as pd
 import astropy.units as u
 
-from srcsim.mc import MCCollection
+from srcsim.sample.factory import CollectionFactory
+from srcsim.sample.hdfkeys import get_events_key
 from srcsim.src import generator as srcgen
 from srcsim.run import DataRun
 
@@ -47,7 +48,10 @@ def main():
 
     log.info('loading MCs')
     mc = {
-        emission_type: MCCollection(cfg['mc'][emission_type]['files'])
+        emission_type: CollectionFactory.get_collection(
+            cfg['mc'][emission_type]['files'],
+            emission_type
+        )
         for emission_type in cfg['mc']
     }
 
@@ -102,7 +106,7 @@ def main():
     # Write events under the key from MC files
     _key = list(mc.keys())[0]
     _files = glob.glob(mc[_key].file_mask)
-    events_key = MCCollection.get_events_key(_files[0])
+    events_key = get_events_key(_files[0])
     events.to_hdf(cfg['io']['out'] + f'run{run.id}.h5', key=events_key)
 
     log.info('simulation complete')
